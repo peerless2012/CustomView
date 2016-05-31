@@ -27,20 +27,44 @@ public class VoiceView extends View {
 	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+	/**
+	 * View缺省宽度
+	 */
 	private int defaultWidth;
 	
+	/**
+	 * View缺省高度
+	 */
 	private int defaultHeight;
 	
+	/**
+	 * 是否需要重新计算各个点、矩形等的坐标
+	 */
 	private boolean isPointsDirty = false;
 	
+	/**
+	 * 点线其实是把View划分成9 x 9的网格，它是每个格子的大小
+	 */
 	private float mItemSize;
 	
+	/**
+	 * 话筒外部区域的rect
+	 */
 	private RectF mRectFOuter;
 	
+	/**
+	 * 话筒内部的rect
+	 */
 	private RectF mRectFInner;
 	
+	/**
+	 * 当前的进度
+	 */
 	private float mProgress = 0.8f;
 	
+	/**
+	 * 绘制的路径
+	 */
 	private Path mPath;
 	
 	public VoiceView(Context context) {
@@ -63,6 +87,8 @@ public class VoiceView extends View {
 		int widthMode = MeasureSpec.getMode(widthMeasureSpec);
 		int height = MeasureSpec.getSize(heightMeasureSpec);
 		int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+		
+		//只要是不是精确指定的，就设置为默认宽高。
 		if (widthMode != MeasureSpec.EXACTLY) {
 			width = defaultWidth;
 		}
@@ -87,21 +113,31 @@ public class VoiceView extends View {
 		super.onDraw(canvas);
 		if (isPointsDirty) {
 			initPoints();
+			isPointsDirty = false;
 		}
 		
+		//设置颜色为浅灰色
 		mPaint.setColor(Color.LTGRAY);
+		//设置Paint的样式为空心
 		mPaint.setStyle(Style.STROKE);
+		//设置Paint的笔帽为圆形
 		mPaint.setStrokeCap(Cap.ROUND);
+		// 设置Paint宽度
 		mPaint.setStrokeWidth(mItemSize / 2);
 		
+		//绘制路径
 		canvas.drawPath(mPath, mPaint);
 		
 		mPaint.setStyle(Style.FILL);
+		//绘制话筒内部（灰色区域）
 		float r = 3.6f * mItemSize;
 		canvas.drawRoundRect(mRectFInner, r, r, mPaint);
 		
+		//裁剪需要绘制绿色的区域
 		canvas.clipRect(mRectFInner.left, mRectFInner.top + (mRectFInner.bottom - mRectFInner.top) * ( 1- mProgress)
 				, mRectFInner.right, mRectFInner.bottom);
+		
+		//绘制绿色话筒
 		mPaint.setColor(Color.GREEN);
 		canvas.drawRoundRect(mRectFInner, r, r, mPaint);
 	}
@@ -162,12 +198,15 @@ public class VoiceView extends View {
 	@Override
 	protected void onDetachedFromWindow() {
 		if (mValueAnimator != null) {
-			mValueAnimator.cancel();
+			mValueAnimator.end();;
 		}
 		super.onDetachedFromWindow();
 	}
 	
-	
+	/**
+	 * 设置当前进度
+	 * @param progress 最新进度
+	 */
 	public void setProgress(float progress) {
 		mProgress = progress;
 		invalidate();

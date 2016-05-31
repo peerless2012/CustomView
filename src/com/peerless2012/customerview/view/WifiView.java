@@ -12,7 +12,6 @@ import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
-import android.view.View.MeasureSpec;
 import android.view.animation.Animation;
 
 /**
@@ -21,30 +20,60 @@ import android.view.animation.Animation;
 * @HomePage http://peerless2012.github.io
 * @DateTime 2016年5月30日 下午10:59:13
 * @Version V1.0
-* @Description: 自定义话筒录音的View （drawable下wifi）
+* @Description: 自定义Wifi的View （drawable下wifi）
 */
 public class WifiView extends View {
 	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 	
+	/**
+	 * View缺省宽度
+	 */
 	private int defaultWidth;
 	
+	/**
+	 * View缺省高度
+	 */
 	private int defaultHeight;
 	
+	/**
+	 * 外部圆环的宽度
+	 */
 	private float mCircleWidth;
 	
+	/**
+	 * wifi信号的圆的宽度
+	 */
 	private float mWifiCircleWidth;
 	
+	/**
+	 * wifi信号间隔的宽度（1.5倍信号宽度）
+	 */
 	private float mWifiCircleGapWidth;
 	
+	/**
+	 * 是否需要重新计算点、矩形等坐标
+	 */
 	private boolean isPointsDirty = false;
 	
+	/**
+	 * View的中心点
+	 */
 	private PointF mCenterPointF;
 	
+	/**
+	 * wifi信号的所在圆的中心点
+	 */
 	private PointF mWifiPointF;
 	
+	/**
+	 * wifi信号所在圆
+	 */
 	private RectF mWifiRectF;
 	
+	/**
+	 * 当前进度
+	 */
 	private float mProgress = 0.7f;
 	
 	public WifiView(Context context) {
@@ -76,6 +105,8 @@ public class WifiView extends View {
 		int widthMode = MeasureSpec.getMode(widthMeasureSpec);
 		int height = MeasureSpec.getSize(heightMeasureSpec);
 		int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+		
+		//只要是不是精确指定的，就设置为默认宽高。
 		if (widthMode != MeasureSpec.EXACTLY) {
 			width = defaultWidth;
 		}
@@ -92,12 +123,18 @@ public class WifiView extends View {
 		super.onDraw(canvas);
 		if (isPointsDirty) {
 			initPoints();
+			isPointsDirty = false;
 		}
+		
+		//设置颜色，样式和画笔宽度
 		mPaint.setColor(Color.GREEN);
 		mPaint.setStyle(Style.STROKE);
 		mPaint.setStrokeWidth(mCircleWidth);
+		
+		//绘制最外层的圆环
 		canvas.drawCircle(mCenterPointF.x, mCenterPointF.y, getWidth() / 2 - mCircleWidth, mPaint);
 		
+		// 循环绘制wifi信号
 		mPaint.setStrokeWidth(mWifiCircleWidth);
 		float radius = 0;
 		for (int i = 0; i < 5; i++) {
@@ -141,12 +178,16 @@ public class WifiView extends View {
 	@Override
 	protected void onDetachedFromWindow() {
 		if (mValueAnimator != null) {
-			mValueAnimator.cancel();
+			mValueAnimator.end();;
 		}
 		super.onDetachedFromWindow();
 	}
 	
 	
+	/**
+	 * 设置当前进度
+	 * @param progress 最新进度
+	 */
 	public void setProgress(float progress) {
 		mProgress = progress;
 		invalidate();
