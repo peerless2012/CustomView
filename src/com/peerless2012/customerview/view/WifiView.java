@@ -154,6 +154,8 @@ public class WifiView extends View {
 		int measuredHeight = getMeasuredHeight();
 		mCenterPointF.set(measuredWidth / 2, measuredHeight / 2);
 		mWifiPointF.set(measuredWidth / 2, measuredHeight * 0.75f);
+		mWifiCircleWidth = (measuredWidth / 2)/10;
+		mWifiCircleGapWidth = 1.5f * mWifiCircleWidth;
 	}
 	
 	private ValueAnimator mValueAnimator ;
