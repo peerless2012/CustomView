@@ -26,12 +26,12 @@ import android.view.animation.Animation;
 public class VoiceView extends View {
 	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-	
+
 	private int defaultWidth;
 	
 	private int defaultHeight;
 	
-	private boolean isPointDirty = false;
+	private boolean isPointsDirty = false;
 	
 	private float mItemSize;
 	
@@ -70,7 +70,7 @@ public class VoiceView extends View {
 			height = defaultHeight;
 		}
 		setMeasuredDimension(width, height);
-		isPointDirty = true;
+		isPointsDirty = true;
 	}
 	
 	
@@ -85,7 +85,7 @@ public class VoiceView extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
-		if (isPointDirty) {
+		if (isPointsDirty) {
 			initPoints();
 		}
 		
