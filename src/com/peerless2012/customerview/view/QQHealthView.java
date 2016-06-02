@@ -85,7 +85,30 @@ public class QQHealthView extends View {
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		drawBg(canvas);
+	}
+	
+	private void drawBg(Canvas canvas) {
+		int width = getMeasuredWidth();
+		int height = getMeasuredHeight();
 		
+		float yDivider = height * 0.85f;
+		// 上部占高度 0.85，下部占0.15
+		// 绘制上面背景
+		mPaint.setColor(Color.parseColor("#4c5a67"));
+		canvas.drawRect(0, 0, width, yDivider, mPaint);
+		
+		// 绘制下面背景
+		mPaint.setColor(Color.parseColor("#496980"));
+		canvas.drawRect(0, yDivider, width, height, mPaint);
+		
+		// 绘制虚线
+		mPaint.setColor(mColorGray);
+		mPaint.setStrokeWidth(5);
+		float yDash = height * 0.67f;
+		mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
+		canvas.drawLine(mDashMagin, yDash, width - mDashMagin, yDash, mPaint);
+		mPaint.setPathEffect(null);
 	}
 	
 }
