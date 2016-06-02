@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
+import android.graphics.Picture;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
@@ -54,6 +55,8 @@ public class QQHealthView extends View {
 	
 	private int mHeight;
 	
+	private boolean isDirty = true;
+	
 	public QQHealthView(Context context) {
 		this(context,null);
 	}
@@ -74,6 +77,8 @@ public class QQHealthView extends View {
 		
 		mColorWhite = Color.WHITE;
 		mColorGray = Color.parseColor("#76828E");
+		
+		setLayerType(LAYER_TYPE_SOFTWARE, mPaint);//使用Picture的话需要不开启硬件加速
 	}
 
 
@@ -86,29 +91,29 @@ public class QQHealthView extends View {
 		}
 		mHeight = (int) (mWidth * PROPORATION);
 		setMeasuredDimension(mWidth, mHeight);
+		isDirty = true;
 	}
 
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
-		mPaint.reset();
-		
-		bgRect = new RectF(0, 0, mWidth, mHeight);
-		canvas.saveLayer(bgRect, mPaint, Canvas.ALL_SAVE_FLAG);
+		preDraw();
 		
 		drawBg(canvas);
 		
 		drawCircle(canvas);
-		
-		canvas.restore();
-		
 	}
 	
+	private void preDraw() {
+		mPaint.reset();
+	}
+
 	private void drawCircle(Canvas canvas) {
 		float circleRadius = getHeight() * 0.5f * 0.5f;
 		float centerX = getWidth() /2;
 		float centerY = circleRadius + mDashMagin;
 		
+		mPaint.reset();
 		int[] colors = {0xFF9A9BF8,0xFF9AA2F7, 0xFF65CCD1,0xFF63D0CD,0xFF68CBD0,0xFF999AF6,0xFF9A9BF8};
         float[] positions = {0,1f/6,2f/6,3f/6,4f/6,5f/6,1};
         SweepGradient mSweepGradient = new SweepGradient(centerX, centerY, colors , positions);
@@ -122,29 +127,44 @@ public class QQHealthView extends View {
 		mPaint.setShader(null);
 	}
 	
+	private Picture mBgPicture;
+	
 	private void drawBg(Canvas canvas) {
-		
-		float yDivider = mHeight * 0.85f;
-		// 上部占高度 0.85，下部占0.15
-		// 绘制上面背景
-		mPaint.setColor(Color.parseColor("#4c5a67"));
-		canvas.drawRect(0, 0, mWidth, yDivider, mPaint);
-		
-		// 绘制下面背景
-		mPaint.setColor(Color.parseColor("#496980"));
-		canvas.drawRect(0, yDivider, mWidth, mHeight, mPaint);
-		
-		// 绘制虚线
-		mPaint.setColor(mColorGray);
-		mPaint.setStrokeWidth(5);
-		float yDash = mHeight * 0.67f;
-		mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
-		canvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
-		mPaint.setPathEffect(null);
-		
-		mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
-		canvas.drawPath(getClipPath(), mPaint);
-		
+		if (isDirty) {
+			bgRect = new RectF(0, 0, mWidth, mHeight);
+			
+			mBgPicture = new Picture();
+			Canvas bgCanvas = mBgPicture.beginRecording(mWidth, mHeight);
+			
+//			bgCanvas.saveLayer(bgRect, mPaint, Canvas.ALL_SAVE_FLAG);
+			
+			float yDivider = mHeight * 0.85f;
+			// 上部占高度 0.85，下部占0.15
+			// 绘制上面背景
+			mPaint.setColor(Color.parseColor("#4c5a67"));
+			bgCanvas.drawRect(0, 0, mWidth, yDivider, mPaint);
+			
+			// 绘制下面背景
+			mPaint.setColor(Color.parseColor("#496980"));
+			bgCanvas.drawRect(0, yDivider, mWidth, mHeight, mPaint);
+			
+			// 绘制虚线
+			mPaint.setColor(mColorGray);
+			mPaint.setStrokeWidth(5);
+			float yDash = mHeight * 0.67f;
+			mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
+			bgCanvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
+			mPaint.setPathEffect(null);
+			
+			mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
+			bgCanvas.drawPath(getClipPath(), mPaint);
+			
+			mBgPicture.endRecording();
+//			bgCanvas.restore();
+		}else {
+			
+		}
+		mBgPicture.draw(canvas);
 	}
 	
 	
