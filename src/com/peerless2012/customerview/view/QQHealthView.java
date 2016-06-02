@@ -6,10 +6,9 @@ import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
-import android.graphics.SweepGradient;
-import android.graphics.Paint.Cap;
-import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.TypedValue;
@@ -92,6 +91,9 @@ public class QQHealthView extends View {
 		int width = getMeasuredWidth();
 		int height = getMeasuredHeight();
 		
+		bgRect = new RectF(0, 0, width, height);
+		canvas.saveLayer(bgRect, mPaint, Canvas.ALL_SAVE_FLAG);
+		
 		float yDivider = height * 0.85f;
 		// 上部占高度 0.85，下部占0.15
 		// 绘制上面背景
@@ -109,6 +111,56 @@ public class QQHealthView extends View {
 		mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
 		canvas.drawLine(mDashMagin, yDash, width - mDashMagin, yDash, mPaint);
 		mPaint.setPathEffect(null);
+		
+		mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
+		canvas.drawPath(getClipPath(), mPaint);
+	}
+	
+	
+	
+	private float radius[] = new float[]{
+			20,20,20,20,20,20,20,20
+	};
+
+	private RectF bgRect;
+	private RectF tempRect = new RectF();
+	private Path getClipPath() {
+		Rect bgRect = new Rect(0 + getPaddingLeft()
+				, 0 + getPaddingTop()
+				, getWidth() - getPaddingRight()
+				, getHeight() - getPaddingBottom());
+		RectF rectF = new RectF();
+		Path clipPath =new Path();
+		
+		//左上角
+		clipPath.moveTo(bgRect.left, bgRect.top);
+		clipPath.lineTo(bgRect.left + radius[0], bgRect.top);
+		rectF.set(bgRect.left, bgRect.top, bgRect.left + radius[0] * 2, bgRect.top + radius[1] * 2);
+		clipPath.arcTo(rectF, 270, -90);
+		clipPath.close();
+		
+		//右上角
+		clipPath.moveTo(bgRect.right, bgRect.top);
+		clipPath.lineTo(bgRect.right, bgRect.top + radius[3]);
+		rectF.set(bgRect.right - radius[2] * 2, bgRect.top, bgRect.right, bgRect.top + radius[3] * 2);
+		clipPath.arcTo(rectF, 0, -90);
+		clipPath.close();
+		
+		//右下角
+		clipPath.moveTo(bgRect.right, bgRect.bottom);
+		clipPath.lineTo(bgRect.right - radius[4], bgRect.bottom);
+		rectF.set(bgRect.right - radius[4] * 2, bgRect.bottom - radius[5] * 2, bgRect.right, bgRect.bottom);
+		clipPath.arcTo(rectF, 90, -90);
+		clipPath.close();
+		
+		//左下角
+		clipPath.moveTo(bgRect.left, bgRect.bottom);
+		clipPath.lineTo(bgRect.left, bgRect.bottom - radius[7]);
+		rectF.set(bgRect.left, bgRect.bottom - radius[7] * 2, bgRect.left + radius[6] * 2, bgRect.bottom);
+		clipPath.arcTo(rectF, 180, -90);
+		clipPath.close();
+		
+		return clipPath;
 	}
 	
 }

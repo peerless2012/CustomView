@@ -19,6 +19,7 @@ public class MainActivity extends Activity {
 
 	private int [] mLayoutRes = new int[]{
 			R.layout.view_clock,R.layout.view_record,R.layout.view_wifi
+			,R.layout.view_qq_health
 	};
 	
 	private ViewPager mViewPager;
