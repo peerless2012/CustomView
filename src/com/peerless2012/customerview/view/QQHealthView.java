@@ -5,11 +5,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
+import android.graphics.Paint.Cap;
+import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.SweepGradient;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
@@ -47,6 +50,10 @@ public class QQHealthView extends View {
 	
 	private float mDashMagin;
 	
+	private int mWidth;
+	
+	private int mHeight;
+	
 	public QQHealthView(Context context) {
 		this(context,null);
 	}
@@ -72,48 +79,72 @@ public class QQHealthView extends View {
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		int width = MeasureSpec.getSize(widthMeasureSpec);
+		mWidth = MeasureSpec.getSize(widthMeasureSpec);
 		int widthMode = MeasureSpec.getMode(widthMeasureSpec);
 		if (widthMode == MeasureSpec.UNSPECIFIED) {
-			width = (int) defaultWidth;
+			mWidth = (int) defaultWidth;
 		}
-		int height = (int) (width * PROPORATION);
-		setMeasuredDimension(width, height);
+		mHeight = (int) (mWidth * PROPORATION);
+		setMeasuredDimension(mWidth, mHeight);
 	}
 
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		mPaint.reset();
+		
+		bgRect = new RectF(0, 0, mWidth, mHeight);
+		canvas.saveLayer(bgRect, mPaint, Canvas.ALL_SAVE_FLAG);
+		
 		drawBg(canvas);
+		
+		drawCircle(canvas);
+		
+		canvas.restore();
+		
+	}
+	
+	private void drawCircle(Canvas canvas) {
+		float circleRadius = getHeight() * 0.5f * 0.5f;
+		float centerX = getWidth() /2;
+		float centerY = circleRadius + mDashMagin;
+		
+		int[] colors = {0xFF9A9BF8,0xFF9AA2F7, 0xFF65CCD1,0xFF63D0CD,0xFF68CBD0,0xFF999AF6,0xFF9A9BF8};
+        float[] positions = {0,1f/6,2f/6,3f/6,4f/6,5f/6,1};
+        SweepGradient mSweepGradient = new SweepGradient(centerX, centerY, colors , positions);
+		
+		tempRect.set(centerX - circleRadius, centerY - circleRadius, centerX + circleRadius, centerY + circleRadius);
+		mPaint.setStrokeWidth(20);
+		mPaint.setStyle(Style.STROKE);
+		mPaint.setStrokeCap(Cap.ROUND);
+		mPaint.setShader(mSweepGradient);
+		canvas.drawArc(tempRect, 120, 300, false, mPaint);
+		mPaint.setShader(null);
 	}
 	
 	private void drawBg(Canvas canvas) {
-		int width = getMeasuredWidth();
-		int height = getMeasuredHeight();
 		
-		bgRect = new RectF(0, 0, width, height);
-		canvas.saveLayer(bgRect, mPaint, Canvas.ALL_SAVE_FLAG);
-		
-		float yDivider = height * 0.85f;
+		float yDivider = mHeight * 0.85f;
 		// 上部占高度 0.85，下部占0.15
 		// 绘制上面背景
 		mPaint.setColor(Color.parseColor("#4c5a67"));
-		canvas.drawRect(0, 0, width, yDivider, mPaint);
+		canvas.drawRect(0, 0, mWidth, yDivider, mPaint);
 		
 		// 绘制下面背景
 		mPaint.setColor(Color.parseColor("#496980"));
-		canvas.drawRect(0, yDivider, width, height, mPaint);
+		canvas.drawRect(0, yDivider, mWidth, mHeight, mPaint);
 		
 		// 绘制虚线
 		mPaint.setColor(mColorGray);
 		mPaint.setStrokeWidth(5);
-		float yDash = height * 0.67f;
+		float yDash = mHeight * 0.67f;
 		mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
-		canvas.drawLine(mDashMagin, yDash, width - mDashMagin, yDash, mPaint);
+		canvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
 		mPaint.setPathEffect(null);
 		
 		mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
 		canvas.drawPath(getClipPath(), mPaint);
+		
 	}
 	
 	
