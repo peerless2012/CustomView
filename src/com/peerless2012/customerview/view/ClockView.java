@@ -1,15 +1,28 @@
 package com.peerless2012.customerview.view;
 
+import java.util.Calendar;
+import java.util.Locale;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.os.SystemClock;
+import android.text.format.DateFormat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
-import android.view.View.MeasureSpec;
 
+/**
+* @Author peerless2012
+* @Email  peerless2012@126.com
+* @HomePage http://peerless2012.github.io
+* @DateTime 2016年6月3日 上午12:30:54
+* @Version V1.0
+* @Description: 模仿钟表的View
+*/
 public class ClockView extends View{
 
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -39,6 +52,8 @@ public class ClockView extends View{
 	
 	private int clockEdgeWidth = 2;
 	
+	private int[] handDegrees = new int[3];
+	
 	public ClockView(Context context) {
 		this(context,null);
 	}
@@ -51,6 +66,7 @@ public class ClockView extends View{
 		super(context, attrs, defStyleAttr);
 		
 		defaultWidth = defaultHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, context.getResources().getDisplayMetrics());
+		mTime = Calendar.getInstance(Locale.CHINESE);
 	}
 	
 	@Override
@@ -77,11 +93,9 @@ public class ClockView extends View{
 		radius = mContentWidth / 2 -clockEdgeWidth;
 	}
 
-	
-	
 	@Override
 	protected void onDraw(Canvas canvas) {
-		super.onDraw(canvas);
+		canvas.translate(centerX, centerY);
 		
 		drawClockBg(canvas);
 		
@@ -94,24 +108,22 @@ public class ClockView extends View{
 	 */
 	private void drawHand(Canvas canvas) {
 		canvas.save();
-		canvas.translate(centerX, centerY);
-		
 		//时针
 		canvas.save();
 		mPaint.setStrokeWidth(4);
-		canvas.rotate(30);
+		canvas.rotate(handDegrees[0]);
 		canvas.drawLine(0, -10, 0, radius * 0.4f, mPaint);
 		canvas.restore();
 		//分针
 		canvas.save();
 		mPaint.setStrokeWidth(2);
-		canvas.rotate(90);
+		canvas.rotate(handDegrees[1]);
 		canvas.drawLine(0, -10, 0, radius * 0.6f, mPaint);
 		canvas.restore();
 		//秒针
 		canvas.save();
 		mPaint.setStrokeWidth(1);
-		canvas.rotate(60);
+		canvas.rotate(handDegrees[2]);
 		canvas.drawLine(0, -10, 0, radius * 0.8f, mPaint);
 		canvas.restore();
 		//红圈
@@ -119,6 +131,8 @@ public class ClockView extends View{
 		mPaint.setColor(Color.RED);
 		mPaint.setStyle(Style.STROKE);
 		canvas.drawCircle(0, 0, 3, mPaint);
+		
+		canvas.rotate(180);
 		canvas.restore();
 	}
 
@@ -130,12 +144,11 @@ public class ClockView extends View{
 		mPaint.setStrokeWidth(2);
 		mPaint.setColor(Color.GRAY);
 		mPaint.setStyle(Style.STROKE);
-		canvas.drawCircle(centerX, centerY, radius, mPaint);
+		canvas.drawCircle(0, 0, radius, mPaint);
 		
 		//绘制表盘刻度
 		mPaint.setStyle(Style.FILL);
 		canvas.save();
-		canvas.translate(centerX, centerY);
 		for (int i = 0; i < 36; i++) {
 			canvas.drawLine(0, radius, 0, radius - (i % 3 == 0 ? 10 : 5), mPaint);
 			canvas.rotate(10);
@@ -153,4 +166,45 @@ public class ClockView extends View{
 //		}
 //		canvas.restore();
 	}
+	
+	private Calendar mTime;
+	
+	private boolean mAttached;
+	
+	private final Runnable mTicker = new Runnable() {
+        public void run() {
+        	onTimeChanged();
+        	mTime.setTimeInMillis(System.currentTimeMillis());
+            long now = SystemClock.uptimeMillis();
+            long next = now + (1000 - now % 1000);
+            getHandler().postAtTime(mTicker, next);
+        }
+    };
+    
+    @Override
+	protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		if (!mAttached) {
+            mAttached = true;
+            mTicker.run();
+        }
+	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		super.onDetachedFromWindow();
+		if (mAttached) {
+            getHandler().removeCallbacks(mTicker);
+            mAttached = false;
+        }
+	}
+	
+	private void onTimeChanged() {
+        mTime.setTimeInMillis(System.currentTimeMillis());
+        handDegrees[0] = (mTime.get(Calendar.HOUR) % 12) * 30;
+        handDegrees[1] = mTime.get(Calendar.MINUTE) * 6;
+        handDegrees[2] = mTime.get(Calendar.SECOND) * 6;
+        Log.i("ClockView", handDegrees[0] + " " + handDegrees[1] + " " + handDegrees[2]);
+        invalidate();
+    }
 }
