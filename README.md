@@ -4,11 +4,11 @@
 ## 效果列表
 
 ### 1.话筒录音
-![话筒录音](https://raw.githubusercontent.com/peerless2012/CustomerView/master/ScreenShots/voice.gif)
+![话筒录音](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/voice.gif)
 
 
 ### 2.Wifi信号
-![wifi信号](https://raw.githubusercontent.com/peerless2012/CustomerView/master/ScreenShots/wifi.gif)
+![wifi信号](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/wifi.gif)
 
 ## 关于
 Author peerless2012
