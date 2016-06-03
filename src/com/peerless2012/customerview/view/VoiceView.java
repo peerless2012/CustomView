@@ -95,7 +95,8 @@ public class VoiceView extends View {
 		if (heightMode != MeasureSpec.EXACTLY) {
 			height = defaultHeight;
 		}
-		setMeasuredDimension(width, height);
+		int size = Math.min(width, height);
+		setMeasuredDimension(size, size);
 		isPointsDirty = true;
 	}
 	
