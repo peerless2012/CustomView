@@ -2,16 +2,15 @@ package com.peerless2012.customerview.view;
 
 import java.util.Calendar;
 import java.util.Locale;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Paint.Align;
+import android.graphics.Paint.FontMetrics;
 import android.graphics.Paint.Style;
 import android.os.SystemClock;
-import android.text.format.DateFormat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 
@@ -25,6 +24,9 @@ import android.view.View;
 */
 public class ClockView extends View{
 
+	public final static int TEXT_MODE_FIXED = 0;
+	public final static int TEXT_MODE_AROUND = 1;
+	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 	/**
@@ -53,6 +55,8 @@ public class ClockView extends View{
 	private int clockEdgeWidth = 2;
 	
 	private int[] handDegrees = new int[3];
+	
+	private int mTextMode = TEXT_MODE_FIXED;
 	
 	public ClockView(Context context) {
 		this(context,null);
@@ -107,33 +111,29 @@ public class ClockView extends View{
 	 * @param canvas
 	 */
 	private void drawHand(Canvas canvas) {
-		canvas.save();
 		//时针
 		canvas.save();
 		mPaint.setStrokeWidth(4);
 		canvas.rotate(handDegrees[0]);
-		canvas.drawLine(0, -10, 0, radius * 0.4f, mPaint);
+		canvas.drawLine(0, 10, 0, - radius * 0.4f, mPaint);
 		canvas.restore();
 		//分针
 		canvas.save();
 		mPaint.setStrokeWidth(2);
 		canvas.rotate(handDegrees[1]);
-		canvas.drawLine(0, -10, 0, radius * 0.6f, mPaint);
+		canvas.drawLine(0, 10, 0, - radius * 0.6f, mPaint);
 		canvas.restore();
 		//秒针
 		canvas.save();
 		mPaint.setStrokeWidth(1);
 		canvas.rotate(handDegrees[2]);
-		canvas.drawLine(0, -10, 0, radius * 0.8f, mPaint);
+		canvas.drawLine(0, 10, 0, - radius * 0.8f, mPaint);
 		canvas.restore();
 		//红圈
 		mPaint.setStrokeWidth(2);
 		mPaint.setColor(Color.RED);
 		mPaint.setStyle(Style.STROKE);
 		canvas.drawCircle(0, 0, 3, mPaint);
-		
-		canvas.rotate(180);
-		canvas.restore();
 	}
 
 	/**
@@ -149,22 +149,32 @@ public class ClockView extends View{
 		//绘制表盘刻度
 		mPaint.setStyle(Style.FILL);
 		canvas.save();
-		for (int i = 0; i < 36; i++) {
-			canvas.drawLine(0, radius, 0, radius - (i % 3 == 0 ? 10 : 5), mPaint);
-			canvas.rotate(10);
+		for (int i = 0; i < 60; i++) {
+			canvas.drawLine(0, radius, 0, radius - (i % 5 == 0 ? 10 : 5), mPaint);
+			canvas.rotate(6);
 		}
 		canvas.restore();
 		
-//		canvas.save();
-//		canvas.translate(centerX, centerY);
-//		int x = 0;
-//		int y = 0;
-//		for (int i = 0; i < 12; i++) {
-//			x = (int) (Math.cos(i * 10) * radius);
-//			y = (int) (Math.sin(i * 10) * radius);
-//			canvas.drawText("" + i, x, y, mPaint);
-//		}
-//		canvas.restore();
+		canvas.save();
+		int x = 0;
+		int y = 0;
+		FontMetrics fontMetrics = mPaint.getFontMetrics();
+		float offset = (fontMetrics.descent - fontMetrics.ascent)/2;
+		mPaint.setTextAlign(Align.CENTER);
+		for (int i = 0; i < 12; i++) {
+			y = radius - 30;
+			canvas.translate(x, -y);
+			if (mTextMode == TEXT_MODE_FIXED) {
+				canvas.rotate( -30 * i);
+			}
+			canvas.drawText("" + i, 0, offset, mPaint);
+			if (mTextMode == TEXT_MODE_FIXED) {
+				canvas.rotate( 30 * i);
+			}
+			canvas.translate(x, y);
+			canvas.rotate(30);
+		}
+		canvas.restore();
 	}
 	
 	private Calendar mTime;
@@ -204,7 +214,7 @@ public class ClockView extends View{
         handDegrees[0] = (mTime.get(Calendar.HOUR) % 12) * 30;
         handDegrees[1] = mTime.get(Calendar.MINUTE) * 6;
         handDegrees[2] = mTime.get(Calendar.SECOND) * 6;
-        Log.i("ClockView", handDegrees[0] + " " + handDegrees[1] + " " + handDegrees[2]);
+//        Log.i("ClockView", handDegrees[0] + " " + handDegrees[1] + " " + handDegrees[2]);
         invalidate();
     }
 }
