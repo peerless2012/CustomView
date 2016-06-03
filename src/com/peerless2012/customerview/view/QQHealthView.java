@@ -1,11 +1,15 @@
 package com.peerless2012.customerview.view;
 
+import java.util.Random;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
+import android.graphics.Paint.Align;
 import android.graphics.Paint.Cap;
+import android.graphics.Paint.FontMetrics;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Picture;
@@ -27,9 +31,13 @@ import android.view.View;
 */
 public class QQHealthView extends View {
 	
+	private Random mRandom = new Random();
+	
 	private final static float PROPORATION = 1.2f;
 	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+	
+	private Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 	/**
 	 * View缺省宽度
@@ -71,16 +79,22 @@ public class QQHealthView extends View {
 		defaultWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, context.getResources().getDisplayMetrics());
 		defaultHeight = PROPORATION * defaultWidth;
 		
-		mDashLength = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, context.getResources().getDisplayMetrics());
-		mDashSpaceLength = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, context.getResources().getDisplayMetrics());
+		mDashLength = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, context.getResources().getDisplayMetrics());
+		mDashSpaceLength = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, context.getResources().getDisplayMetrics());
 		mDashMagin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, context.getResources().getDisplayMetrics());
 		
 		mColorWhite = Color.WHITE;
 		mColorGray = Color.parseColor("#76828E");
 		
+		mTextPaint.setTextAlign(Align.CENTER);
+		
 		setLayerType(LAYER_TYPE_SOFTWARE, mPaint);//使用Picture的话需要不开启硬件加速
 	}
 
+	private float getTextYOffset(Paint paint) {
+		FontMetrics fontMetrics = paint.getFontMetrics();
+		return (fontMetrics.descent - fontMetrics.ascent) / 4;
+	}
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -99,11 +113,34 @@ public class QQHealthView extends View {
 	protected void onDraw(Canvas canvas) {
 		preDraw();
 		
-		drawBg(canvas);
+		drawBgForPreview(canvas);
 		
 		drawCircle(canvas);
+		
+		drawRecently(canvas);
 	}
 	
+	private void drawRecently(Canvas canvas) {
+		float itemLength = (mWidth - mDashMagin * 2) / 7;
+		float startX = 0;
+		float startY = 0;
+		float endX = 0;
+		float endY = 0;
+		mTextPaint.setColor(Color.WHITE);
+		mTextPaint.setTextSize(20);
+		mTextPaint.setTextAlign(Align.CENTER);
+		mPaint.setColor(Color.parseColor("#63CFEC"));
+		FontMetrics fontMetrics = mTextPaint.getFontMetrics();
+		float yOffset = 0.8f * mHeight + (fontMetrics.descent - fontMetrics.ascent) / 2;
+		for (int i = 0; i < 7; i++) {
+			startX = mDashMagin + itemLength / 2 + i * itemLength;
+			startY = 0.75f * mHeight;
+			canvas.drawLine(startX, startY, startX, startY - (mRandom.nextInt(25)+ 25), mPaint);
+			canvas.drawText(i +"日", startX, yOffset, mTextPaint);
+		}
+		
+	}
+
 	private void preDraw() {
 		mPaint.reset();
 	}
@@ -125,6 +162,32 @@ public class QQHealthView extends View {
 		mPaint.setShader(mSweepGradient);
 		canvas.drawArc(tempRect, 120, 300, false, mPaint);
 		mPaint.setShader(null);
+		
+		// 绘制文字
+		mTextPaint.setTextSize(50);
+		float centerTextHeight = getTextHeight(mTextPaint);
+		mTextPaint.setColor(Color.WHITE);
+		canvas.drawText("5599",centerX , centerY + getTextYOffset(mTextPaint), mTextPaint);
+		
+		mTextPaint.setTextSize(18);
+		canvas.drawText("截止22:34已走", centerX, centerY - centerTextHeight / 2 - getTextHeight(mTextPaint) / 2, mTextPaint);
+		canvas.drawText("好友平均239步", centerX, centerY + centerTextHeight / 2 + getTextHeight(mTextPaint) / 2, mTextPaint);
+		
+		mTextPaint.setTextSize(20);
+		canvas.drawText("第67名", centerX, centerY + circleRadius + 10 + getTextYOffset(mTextPaint) , mTextPaint);
+		
+		mTextPaint.setTextAlign(Align.LEFT);
+		float textY = 0.925f * mHeight;
+		canvas.drawText("这是被隐藏的内容", mDashMagin , textY + getTextYOffset(mTextPaint), mTextPaint);
+		mTextPaint.setTextAlign(Align.RIGHT);
+		canvas.drawText("查看 > ", mWidth - mDashMagin , textY + getTextYOffset(mTextPaint), mTextPaint);
+		
+		mTextPaint.setTextAlign(Align.CENTER);
+	}
+	
+	private float getTextHeight(Paint paint) {
+		FontMetrics fontMetrics = paint.getFontMetrics();
+		return fontMetrics.bottom - fontMetrics.top;
 	}
 	
 	private Picture mBgPicture;
@@ -150,7 +213,7 @@ public class QQHealthView extends View {
 			
 			// 绘制虚线
 			mPaint.setColor(mColorGray);
-			mPaint.setStrokeWidth(5);
+			mPaint.setStrokeWidth(2);
 			float yDash = mHeight * 0.67f;
 			mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
 			bgCanvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
@@ -161,13 +224,32 @@ public class QQHealthView extends View {
 			
 			mBgPicture.endRecording();
 //			bgCanvas.restore();
-		}else {
-			
 		}
 		mBgPicture.draw(canvas);
 	}
 	
-	
+	private void drawBgForPreview(Canvas bgCanvas) {
+		float yDivider = mHeight * 0.85f;
+		// 上部占高度 0.85，下部占0.15
+		// 绘制上面背景
+		mPaint.setColor(Color.parseColor("#4c5a67"));
+		bgCanvas.drawRect(0, 0, mWidth, yDivider, mPaint);
+		
+		// 绘制下面背景
+		mPaint.setColor(Color.parseColor("#496980"));
+		bgCanvas.drawRect(0, yDivider, mWidth, mHeight, mPaint);
+		
+		// 绘制虚线
+		mPaint.setColor(mColorGray);
+		mPaint.setStrokeWidth(2);
+		float yDash = mHeight * 0.67f;
+		mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
+		bgCanvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
+		mPaint.setPathEffect(null);
+		
+		mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
+		bgCanvas.drawPath(getClipPath(), mPaint);
+	}
 	
 	private float radius[] = new float[]{
 			20,20,20,20,20,20,20,20

@@ -1,11 +1,9 @@
 package com.peerless2012.customerview;
 
 import android.app.Activity;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 
 /**
 * @Author peerless2012
@@ -18,7 +16,7 @@ import android.widget.FrameLayout;
 public class MainActivity extends Activity {
 
 	private int [] mLayoutRes = new int[]{
-			R.layout.view_qq_health,R.layout.view_clock,R.layout.view_record,R.layout.view_wifi
+			R.layout.view_clock,R.layout.view_record,R.layout.view_wifi
 			,R.layout.view_qq_health
 	};
 	
