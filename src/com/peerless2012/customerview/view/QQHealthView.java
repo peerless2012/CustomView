@@ -143,14 +143,15 @@ public class QQHealthView extends View {
 
 	private void preDraw() {
 		mPaint.reset();
+		mPaint.setAntiAlias(true);
 	}
 
 	private void drawCircle(Canvas canvas) {
+		
 		float circleRadius = getHeight() * 0.5f * 0.5f;
 		float centerX = getWidth() /2;
 		float centerY = circleRadius + mDashMagin;
 		
-		mPaint.reset();
 		int[] colors = {0xFF9A9BF8,0xFF9AA2F7, 0xFF65CCD1,0xFF63D0CD,0xFF68CBD0,0xFF999AF6,0xFF9A9BF8};
         float[] positions = {0,1f/6,2f/6,3f/6,4f/6,5f/6,1};
         SweepGradient mSweepGradient = new SweepGradient(centerX, centerY, colors , positions);
@@ -249,6 +250,7 @@ public class QQHealthView extends View {
 		
 		mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
 		bgCanvas.drawPath(getClipPath(), mPaint);
+		mPaint.setXfermode(null);
 	}
 	
 	private float radius[] = new float[]{
