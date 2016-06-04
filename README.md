@@ -10,7 +10,10 @@
 ### 2.Wifi信号
 ![wifi信号](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/wifi.gif)
 
-### 3.QQ健康卡片
+### 3.模拟钟表
+![模拟钟表](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/clock.gif)
+
+### 4.QQ健康卡片
 ![QQ健康卡片](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/qqhealth.png)
 
 ## 关于
