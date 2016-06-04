@@ -1,7 +1,6 @@
 package com.peerless2012.customerview.view;
 
 import java.util.Random;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -49,9 +48,19 @@ public class QQHealthView extends View {
 	 */
 	private float defaultHeight;
 	
-	private int mColorGray;
+	private int mWidth;
 	
-	private int mColorWhite;
+	private int mHeight;
+	
+	private boolean isDirty = true;
+	
+	private RectF tempRect = new RectF();
+	
+	private Picture mBgPicture;
+	
+	// 虚线
+	
+	private float mDashHeight;
 	
 	private float mDashLength;
 	
@@ -59,11 +68,53 @@ public class QQHealthView extends View {
 	
 	private float mDashMagin;
 	
-	private int mWidth;
+	private DashPathEffect mDashPathEffect;
 	
-	private int mHeight;
 	
-	private boolean isDirty = true;
+	// 字体大小
+	
+	private float mTextSize50;
+	
+	private float mTextSize22;
+	
+	private float mTextSize18;
+	
+	private float mTextSize16;
+	
+	private float mTextSize14;
+	
+	// 颜色
+	
+	private int mBgTopColor;
+	
+	private int mBgBottomColor;
+	
+	private int mLightBlueColor;
+	
+	private int mWhiteColor;
+	
+	private int mGrayColor;
+	
+	// 百分比
+	private float mDividerPercent = 0.85f;
+	
+	private float mDashLinePercent = 0.67f;
+	
+	// 绘制内容区
+	
+	private int[] mCurrentColors = {0xFF9A9BF8,0xFF9AA2F7, 0xFF65CCD1,0xFF63D0CD,0xFF68CBD0,0xFF999AF6,0xFF9A9BF8};
+	
+	private float[] mCurrentPoints = {0,1f/6,2f/6,3f/6,4f/6,5f/6,1};
+	
+	private float mProgressWidth;
+	
+	// 边距
+	
+	private float mMargin6;
+	
+	private float mMargin10;
+	
+	private float mMargin13;
 	
 	public QQHealthView(Context context) {
 		this(context,null);
@@ -76,24 +127,33 @@ public class QQHealthView extends View {
 	public QQHealthView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
 		
-		defaultWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, context.getResources().getDisplayMetrics());
+		defaultWidth = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 100);
 		defaultHeight = PROPORATION * defaultWidth;
 		
-		mDashLength = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, context.getResources().getDisplayMetrics());
-		mDashSpaceLength = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, context.getResources().getDisplayMetrics());
-		mDashMagin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, context.getResources().getDisplayMetrics());
+		mProgressWidth = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+		mDashHeight = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 2);
+		mDashLength = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 5);
+		mDashSpaceLength = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 2);
+		mDashMagin = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+		mDashPathEffect = new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0);
 		
-		mColorWhite = Color.WHITE;
-		mColorGray = Color.parseColor("#76828E");
+		mTextSize50 = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 50);
+		mTextSize22 = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 22);
+		mTextSize18 = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 18);
+		mTextSize16 = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 16);
+		mTextSize14 = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 14);
+		mMargin6 = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 6);
+		mMargin10 = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+		mMargin13 = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 13);
 		
-		mTextPaint.setTextAlign(Align.CENTER);
+		// 处理颜色
+		mBgTopColor = Color.parseColor("#4C5A67");
+		mBgBottomColor = Color.parseColor("#496980");
+		mLightBlueColor = Color.parseColor("#63CFEC");
+		mWhiteColor = Color.WHITE;
+		mGrayColor = Color.parseColor("#808C96");
 		
 		setLayerType(LAYER_TYPE_SOFTWARE, mPaint);//使用Picture的话需要不开启硬件加速
-	}
-
-	private float getTextYOffset(Paint paint) {
-		FontMetrics fontMetrics = paint.getFontMetrics();
-		return (fontMetrics.descent - fontMetrics.ascent) / 4;
 	}
 
 	@Override
@@ -111,188 +171,267 @@ public class QQHealthView extends View {
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		
 		preDraw();
 		
-		drawBgForPreview(canvas);
+		drawBg(canvas);
 		
 		drawCircle(canvas);
 		
 		drawRecently(canvas);
+		
+		drawButtomBar(canvas);
 	}
 	
+	/**
+	 * 重置参数
+	 */
+	private void preDraw() {
+		mPaint.reset();
+		mPaint.setAntiAlias(true);// 重置以后不要忘了重新设置抗锯齿，否则无抗锯齿功能
+		mTextPaint.reset();
+		mTextPaint.setAntiAlias(true);
+	}
+	
+	/**
+	 * 绘制背景
+	 * @param canvas
+	 */
+	private void drawBg(Canvas canvas) {
+		// 如果需要重新创建Picture
+		if (isDirty) {
+			
+			// 开始用Picture录制
+			mBgPicture = new Picture();
+			Canvas bgCanvas = mBgPicture.beginRecording(mWidth, mHeight);
+			
+			// 上部占高度 0.85，下部占0.15
+			float yDivider = mHeight * mDividerPercent;
+			
+			// 绘制上面背景
+			mPaint.setColor(mBgTopColor);
+			bgCanvas.drawRect(0, 0, mWidth, yDivider, mPaint);
+			
+			// 绘制下面背景
+			mPaint.setColor(mBgBottomColor);
+			bgCanvas.drawRect(0, yDivider, mWidth, mHeight, mPaint);
+			
+			// 绘制虚线
+			mPaint.setColor(mGrayColor);
+			mPaint.setStrokeWidth(mDashHeight);
+			float yDash = mHeight * mDashLinePercent;
+			mPaint.setPathEffect(mDashPathEffect);
+			bgCanvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
+			mPaint.setPathEffect(null);
+			
+			// 裁剪四角
+			mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
+			bgCanvas.drawPath(getClipPath(), mPaint);
+			mPaint.setXfermode(null);
+			
+			// 结束录制
+			mBgPicture.endRecording();
+		}
+		
+		// 绘制录制的内容到Canvas
+		mBgPicture.draw(canvas);
+	}
+	
+	/**
+	 * 绘制最近7天进度
+	 * @param canvas
+	 */
 	private void drawRecently(Canvas canvas) {
+		
+		// 绘制虚线上的文字
+		mTextPaint.setColor(mGrayColor);
+		mTextPaint.setTextSize(mTextSize16);
+		mTextPaint.setTextAlign(Align.LEFT);
+		canvas.drawText("最近7天", mDashMagin, mDashLinePercent * mHeight - mMargin13, mTextPaint);
+		
+		mTextPaint.setTextAlign(Align.RIGHT);
+		canvas.drawText("平均9977步/天", mWidth - mDashMagin, mDashLinePercent * mHeight - mMargin13, mTextPaint);
+		
+		// 绘制柱状图和文字
 		float itemLength = (mWidth - mDashMagin * 2) / 7;
 		float startX = 0;
 		float startY = 0;
-		float endX = 0;
-		float endY = 0;
 		mTextPaint.setColor(Color.WHITE);
-		mTextPaint.setTextSize(20);
+		mTextPaint.setTextSize(mTextSize16);
 		mTextPaint.setTextAlign(Align.CENTER);
-		mPaint.setColor(Color.parseColor("#63CFEC"));
-		FontMetrics fontMetrics = mTextPaint.getFontMetrics();
-		float yOffset = 0.8f * mHeight + (fontMetrics.descent - fontMetrics.ascent) / 2;
+		mPaint.setStyle(Style.FILL);
+		mPaint.setStrokeCap(Cap.ROUND);
+		mPaint.setStrokeWidth(mProgressWidth);
+		mPaint.setColor(mLightBlueColor);
+		float textHeight = getTextHeight(mTextPaint);
+		float textY = mDividerPercent * mHeight - mMargin13;
+		startY = textY - textHeight - mMargin13;
 		for (int i = 0; i < 7; i++) {
 			startX = mDashMagin + itemLength / 2 + i * itemLength;
-			startY = 0.75f * mHeight;
+			canvas.drawText(i +"日", startX, textY, mTextPaint);
 			canvas.drawLine(startX, startY, startX, startY - (mRandom.nextInt(25)+ 25), mPaint);
-			canvas.drawText(i +"日", startX, yOffset, mTextPaint);
 		}
 		
 	}
 
-	private void preDraw() {
-		mPaint.reset();
-		mPaint.setAntiAlias(true);
-	}
+	
 
+	/**
+	 * 绘制今天的进度
+	 * @param canvas
+	 */
 	private void drawCircle(Canvas canvas) {
-		
+		// 确定圆心及半径
 		float circleRadius = getHeight() * 0.5f * 0.5f;
 		float centerX = getWidth() /2;
-		float centerY = circleRadius + mDashMagin;
+		float centerY = circleRadius + mDashMagin + mProgressWidth / 2;
 		
-		int[] colors = {0xFF9A9BF8,0xFF9AA2F7, 0xFF65CCD1,0xFF63D0CD,0xFF68CBD0,0xFF999AF6,0xFF9A9BF8};
-        float[] positions = {0,1f/6,2f/6,3f/6,4f/6,5f/6,1};
-        SweepGradient mSweepGradient = new SweepGradient(centerX, centerY, colors , positions);
-		
+		// 绘制圆环
+		SweepGradient sweepGradient = new SweepGradient(centerX, centerY, mCurrentColors , mCurrentPoints);
 		tempRect.set(centerX - circleRadius, centerY - circleRadius, centerX + circleRadius, centerY + circleRadius);
-		mPaint.setStrokeWidth(20);
+		mPaint.setStrokeWidth(mProgressWidth);
 		mPaint.setStyle(Style.STROKE);
 		mPaint.setStrokeCap(Cap.ROUND);
-		mPaint.setShader(mSweepGradient);
+		mPaint.setShader(sweepGradient);
 		canvas.drawArc(tempRect, 120, 300, false, mPaint);
 		mPaint.setShader(null);
 		
-		// 绘制文字
-		mTextPaint.setTextSize(50);
+		// 绘制圆环内文字
+		mTextPaint.setTextAlign(Align.CENTER);
+		mTextPaint.setTextSize(mTextSize50);
+		mTextPaint.setColor(mWhiteColor);
 		float centerTextHeight = getTextHeight(mTextPaint);
-		mTextPaint.setColor(Color.WHITE);
 		canvas.drawText("5599",centerX , centerY + getTextYOffset(mTextPaint), mTextPaint);
 		
-		mTextPaint.setTextSize(18);
-		canvas.drawText("截止22:34已走", centerX, centerY - centerTextHeight / 2 - getTextHeight(mTextPaint) / 2, mTextPaint);
-		canvas.drawText("好友平均239步", centerX, centerY + centerTextHeight / 2 + getTextHeight(mTextPaint) / 2, mTextPaint);
+		// 绘制圆环内数字上下的文字
+		mTextPaint.setTextSize(mTextSize18);
+		mTextPaint.setColor(mGrayColor);
+//		float currentTextHeight = getTextHeight(mTextPaint);
+		canvas.drawText("截止22:34已走", centerX, centerY - centerTextHeight / 2 - mMargin10, mTextPaint);
+		canvas.drawText("好友平均239步", centerX, centerY + centerTextHeight / 2 + mMargin10, mTextPaint);
 		
-		mTextPaint.setTextSize(20);
-		canvas.drawText("第67名", centerX, centerY + circleRadius + 10 + getTextYOffset(mTextPaint) , mTextPaint);
-		
-		mTextPaint.setTextAlign(Align.LEFT);
-		float textY = 0.925f * mHeight;
-		canvas.drawText("这是被隐藏的内容", mDashMagin , textY + getTextYOffset(mTextPaint), mTextPaint);
+		// 绘制圆环下文字
+		mTextPaint.setTextSize(mTextSize22);
+		mTextPaint.setColor(mWhiteColor);
+		float textWidth = mTextPaint.measureText("67");
+		float bottomTextY = centerY + circleRadius + mProgressWidth + getTextYOffset(mTextPaint);
+		canvas.drawText("67", centerX, bottomTextY , mTextPaint);
 		mTextPaint.setTextAlign(Align.RIGHT);
-		canvas.drawText("查看 > ", mWidth - mDashMagin , textY + getTextYOffset(mTextPaint), mTextPaint);
-		
-		mTextPaint.setTextAlign(Align.CENTER);
+		mTextPaint.setTextSize(mTextSize18);
+		canvas.drawText("第", centerX - mMargin10 - textWidth / 2, bottomTextY , mTextPaint);
+		mTextPaint.setTextAlign(Align.LEFT);
+		mTextPaint.setTextSize(mTextSize18);
+		canvas.drawText("天", centerX + mMargin10 + textWidth / 2, bottomTextY , mTextPaint);
 	}
 	
+	/**
+	 * 绘制底部
+	 * @param canvas
+	 */
+	private void drawButtomBar(Canvas canvas) {
+		
+		mTextPaint.setColor(mWhiteColor);
+		mTextPaint.setTextSize(mTextSize18);
+		float textY = 0.925f * mHeight + getTextYOffset(mTextPaint);
+		
+		// 左侧
+		mTextPaint.setTextAlign(Align.LEFT);
+		canvas.drawText("这是被隐藏的内容", mDashMagin , textY , mTextPaint);
+		
+		// 右侧
+		mTextPaint.setTextAlign(Align.RIGHT);
+		canvas.drawText("查看 > ", mWidth - mDashMagin , textY , mTextPaint);
+	}
+	
+	/**
+	 * 获取绘制文字的高度
+	 * @param paint 画笔
+	 * @return 文字高度
+	 */
 	private float getTextHeight(Paint paint) {
 		FontMetrics fontMetrics = paint.getFontMetrics();
 		return fontMetrics.bottom - fontMetrics.top;
 	}
 	
-	private Picture mBgPicture;
-	
-	private void drawBg(Canvas canvas) {
-		if (isDirty) {
-			bgRect = new RectF(0, 0, mWidth, mHeight);
-			
-			mBgPicture = new Picture();
-			Canvas bgCanvas = mBgPicture.beginRecording(mWidth, mHeight);
-			
-//			bgCanvas.saveLayer(bgRect, mPaint, Canvas.ALL_SAVE_FLAG);
-			
-			float yDivider = mHeight * 0.85f;
-			// 上部占高度 0.85，下部占0.15
-			// 绘制上面背景
-			mPaint.setColor(Color.parseColor("#4c5a67"));
-			bgCanvas.drawRect(0, 0, mWidth, yDivider, mPaint);
-			
-			// 绘制下面背景
-			mPaint.setColor(Color.parseColor("#496980"));
-			bgCanvas.drawRect(0, yDivider, mWidth, mHeight, mPaint);
-			
-			// 绘制虚线
-			mPaint.setColor(mColorGray);
-			mPaint.setStrokeWidth(2);
-			float yDash = mHeight * 0.67f;
-			mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
-			bgCanvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
-			mPaint.setPathEffect(null);
-			
-			mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
-			bgCanvas.drawPath(getClipPath(), mPaint);
-			
-			mBgPicture.endRecording();
-//			bgCanvas.restore();
-		}
-		mBgPicture.draw(canvas);
+	/**
+	 * 根据相应的类型和值转化为缩放后的值（dp、sp等到px）
+	 * @param unit 类型
+	 * @param value 值
+	 * @return 转化后的值
+	 */
+	private float generateScaledSize(int unit, float value) {
+		return TypedValue.applyDimension(unit, value, getResources().getDisplayMetrics());
 	}
 	
-	private void drawBgForPreview(Canvas bgCanvas) {
-		float yDivider = mHeight * 0.85f;
-		// 上部占高度 0.85，下部占0.15
-		// 绘制上面背景
-		mPaint.setColor(Color.parseColor("#4c5a67"));
-		bgCanvas.drawRect(0, 0, mWidth, yDivider, mPaint);
-		
-		// 绘制下面背景
-		mPaint.setColor(Color.parseColor("#496980"));
-		bgCanvas.drawRect(0, yDivider, mWidth, mHeight, mPaint);
-		
-		// 绘制虚线
-		mPaint.setColor(mColorGray);
-		mPaint.setStrokeWidth(2);
-		float yDash = mHeight * 0.67f;
-		mPaint.setPathEffect(new DashPathEffect(new float[]{mDashLength,mDashSpaceLength}, 0));
-		bgCanvas.drawLine(mDashMagin, yDash, mWidth - mDashMagin, yDash, mPaint);
-		mPaint.setPathEffect(null);
-		
-		mPaint.setXfermode(new PorterDuffXfermode(Mode.DST_OUT));
-		bgCanvas.drawPath(getClipPath(), mPaint);
-		mPaint.setXfermode(null);
+	/**
+	 * 获取绘制文字在指定坐标中心时候y方向上应有的偏移值
+	 * @param paint 画笔
+	 * @return y的偏移值
+	 */
+	private float getTextYOffset(Paint paint) {
+		FontMetrics fontMetrics = paint.getFontMetrics();
+		return (fontMetrics.descent - fontMetrics.ascent) / 4;
 	}
 	
-	private float radius[] = new float[]{
-			20,20,20,20,20,20,20,20
-	};
 
-	private RectF bgRect;
-	private RectF tempRect = new RectF();
+	/*-----------------------------------------裁剪四角代码区域，可通用-------------------------------------*/
+	
+	/********************************************************裁剪圆角方法区***********************************************************/
+	
+	private RectF mClipBgRectF = new RectF();
+	private RectF mClipCornerRectF = new RectF();
+	private float radius[] = new float[]{
+			10,10,10,10,10,10,10,10
+	};
+	
 	private Path getClipPath() {
-		Rect bgRect = new Rect(0 + getPaddingLeft()
+		mClipBgRectF.set(
+				  0 + getPaddingLeft()
 				, 0 + getPaddingTop()
-				, getWidth() - getPaddingRight()
+				, getWidth()  - getPaddingRight()
 				, getHeight() - getPaddingBottom());
-		RectF rectF = new RectF();
 		Path clipPath =new Path();
 		
 		//左上角
-		clipPath.moveTo(bgRect.left, bgRect.top);
-		clipPath.lineTo(bgRect.left + radius[0], bgRect.top);
-		rectF.set(bgRect.left, bgRect.top, bgRect.left + radius[0] * 2, bgRect.top + radius[1] * 2);
-		clipPath.arcTo(rectF, 270, -90);
+		clipPath.moveTo(mClipBgRectF.left, mClipBgRectF.top);
+		clipPath.lineTo(mClipBgRectF.left + radius[0], mClipBgRectF.top);
+		mClipCornerRectF.set(
+				  mClipBgRectF.left
+				, mClipBgRectF.top
+				, mClipBgRectF.left + radius[0] * 2
+				, mClipBgRectF.top + radius[1] * 2);
+		clipPath.arcTo(mClipCornerRectF, 270, -90);
 		clipPath.close();
 		
 		//右上角
-		clipPath.moveTo(bgRect.right, bgRect.top);
-		clipPath.lineTo(bgRect.right, bgRect.top + radius[3]);
-		rectF.set(bgRect.right - radius[2] * 2, bgRect.top, bgRect.right, bgRect.top + radius[3] * 2);
-		clipPath.arcTo(rectF, 0, -90);
+		clipPath.moveTo(mClipBgRectF.right, mClipBgRectF.top);
+		clipPath.lineTo(mClipBgRectF.right, mClipBgRectF.top + radius[3]);
+		mClipCornerRectF.set(
+				  mClipBgRectF.right - radius[2] * 2
+				, mClipBgRectF.top, mClipBgRectF.right
+				, mClipBgRectF.top + radius[3] * 2);
+		clipPath.arcTo(mClipCornerRectF, 0, -90);
 		clipPath.close();
 		
 		//右下角
-		clipPath.moveTo(bgRect.right, bgRect.bottom);
-		clipPath.lineTo(bgRect.right - radius[4], bgRect.bottom);
-		rectF.set(bgRect.right - radius[4] * 2, bgRect.bottom - radius[5] * 2, bgRect.right, bgRect.bottom);
-		clipPath.arcTo(rectF, 90, -90);
+		clipPath.moveTo(mClipBgRectF.right, mClipBgRectF.bottom);
+		clipPath.lineTo(mClipBgRectF.right - radius[4], mClipBgRectF.bottom);
+		mClipCornerRectF.set(
+				  mClipBgRectF.right - radius[4] * 2
+				, mClipBgRectF.bottom - radius[5] * 2
+				, mClipBgRectF.right, mClipBgRectF.bottom);
+		clipPath.arcTo(mClipCornerRectF, 90, -90);
 		clipPath.close();
 		
 		//左下角
-		clipPath.moveTo(bgRect.left, bgRect.bottom);
-		clipPath.lineTo(bgRect.left, bgRect.bottom - radius[7]);
-		rectF.set(bgRect.left, bgRect.bottom - radius[7] * 2, bgRect.left + radius[6] * 2, bgRect.bottom);
-		clipPath.arcTo(rectF, 180, -90);
+		clipPath.moveTo(mClipBgRectF.left, mClipBgRectF.bottom);
+		clipPath.lineTo(mClipBgRectF.left, mClipBgRectF.bottom - radius[7]);
+		mClipCornerRectF.set(
+				  mClipBgRectF.left
+				, mClipBgRectF.bottom - radius[7] * 2
+				, mClipBgRectF.left + radius[6] * 2
+				, mClipBgRectF.bottom);
+		clipPath.arcTo(mClipCornerRectF, 180, -90);
 		clipPath.close();
 		
 		return clipPath;
