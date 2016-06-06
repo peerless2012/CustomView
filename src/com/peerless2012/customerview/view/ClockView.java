@@ -2,6 +2,7 @@ package com.peerless2012.customerview.view;
 
 import java.util.Calendar;
 import java.util.Locale;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.FontMetrics;
 import android.graphics.Paint.Style;
+import android.graphics.Picture;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.TypedValue;
@@ -19,7 +21,7 @@ import android.view.View;
 * @Email  peerless2012@126.com
 * @HomePage http://peerless2012.github.io
 * @DateTime 2016年6月3日 上午12:30:54
-* @Version V1.0
+* @Version V1.1 缓存不变的内容
 * @Description: 模仿钟表的View
 */
 public class ClockView extends View{
@@ -58,6 +60,8 @@ public class ClockView extends View{
 	
 	private int mTextMode = TEXT_MODE_FIXED;
 	
+	private Picture mPicture;
+	
 	public ClockView(Context context) {
 		this(context,null);
 	}
@@ -71,6 +75,9 @@ public class ClockView extends View{
 		
 		defaultWidth = defaultHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, context.getResources().getDisplayMetrics());
 		mTime = Calendar.getInstance(Locale.CHINESE);
+		
+		// 5.0以上 使用Picture，必须设置不用硬件加速
+		setLayerType(LAYER_TYPE_SOFTWARE, null);
 	}
 	
 	@Override
@@ -141,40 +148,52 @@ public class ClockView extends View{
 	 * @param canvas
 	 */
 	private void drawClockBg(Canvas canvas) {
-		mPaint.setStrokeWidth(2);
-		mPaint.setColor(Color.GRAY);
-		mPaint.setStyle(Style.STROKE);
-		canvas.drawCircle(0, 0, radius, mPaint);
 		
-		//绘制表盘刻度
-		mPaint.setStyle(Style.FILL);
-		canvas.save();
-		for (int i = 0; i < 60; i++) {
-			canvas.drawLine(0, radius, 0, radius - (i % 5 == 0 ? 10 : 5), mPaint);
-			canvas.rotate(6);
+		if (isPointsDirty) {
+			
+			mPicture = new Picture();
+			Canvas recordCanvas = mPicture.beginRecording(getMeasuredWidth(), getMeasuredHeight());
+			
+			mPaint.setStrokeWidth(2);
+			mPaint.setColor(Color.GRAY);
+			mPaint.setStyle(Style.STROKE);
+			recordCanvas.drawCircle(0, 0, radius, mPaint);
+			
+			//绘制表盘刻度
+			mPaint.setStyle(Style.FILL);
+			recordCanvas.save();
+			for (int i = 0; i < 60; i++) {
+				recordCanvas.drawLine(0, radius, 0, radius - (i % 5 == 0 ? 10 : 5), mPaint);
+				recordCanvas.rotate(6);
+			}
+			recordCanvas.restore();
+			
+			recordCanvas.save();
+			int x = 0;
+			int y = 0;
+			FontMetrics fontMetrics = mPaint.getFontMetrics();
+			float offset = (fontMetrics.descent - fontMetrics.ascent)/2;
+			mPaint.setTextAlign(Align.CENTER);
+			for (int i = 0; i < 12; i++) {
+				y = radius - 30;
+				recordCanvas.translate(x, -y);
+				if (mTextMode == TEXT_MODE_FIXED) {
+					recordCanvas.rotate( -30 * i);
+				}
+				recordCanvas.drawText("" + i, 0, offset, mPaint);
+				if (mTextMode == TEXT_MODE_FIXED) {
+					recordCanvas.rotate( 30 * i);
+				}
+				recordCanvas.translate(x, y);
+				recordCanvas.rotate(30);
+			}
+			recordCanvas.restore();
+			
+			mPicture.endRecording();
 		}
-		canvas.restore();
+		mPicture.draw(canvas);
 		
-		canvas.save();
-		int x = 0;
-		int y = 0;
-		FontMetrics fontMetrics = mPaint.getFontMetrics();
-		float offset = (fontMetrics.descent - fontMetrics.ascent)/2;
-		mPaint.setTextAlign(Align.CENTER);
-		for (int i = 0; i < 12; i++) {
-			y = radius - 30;
-			canvas.translate(x, -y);
-			if (mTextMode == TEXT_MODE_FIXED) {
-				canvas.rotate( -30 * i);
-			}
-			canvas.drawText("" + i, 0, offset, mPaint);
-			if (mTextMode == TEXT_MODE_FIXED) {
-				canvas.rotate( 30 * i);
-			}
-			canvas.translate(x, y);
-			canvas.rotate(30);
-		}
-		canvas.restore();
+		
 	}
 	
 	private Calendar mTime;
