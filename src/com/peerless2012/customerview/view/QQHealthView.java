@@ -231,6 +231,8 @@ public class QQHealthView extends View {
 			
 			// 结束录制
 			mBgPicture.endRecording();
+			
+			isDirty = false;
 		}
 		
 		// 绘制录制的内容到Canvas

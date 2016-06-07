@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Style;
+import android.graphics.Picture;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.TypedValue;
@@ -67,6 +68,10 @@ public class VoiceView extends View {
 	 */
 	private Path mPath;
 	
+	private Picture mPicture = new Picture();
+	
+	private float mRadius;
+	
 	public VoiceView(Context context) {
 		this(context, null);
 	}
@@ -107,32 +112,14 @@ public class VoiceView extends View {
 		mRectFInner = new RectF();
 		mRectFOuter = new RectF();
 		mPath = new Path();
+		
+		setLayerType(LAYER_TYPE_SOFTWARE, null);
 	}
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
-		if (isPointsDirty) {
-			initPoints();
-			isPointsDirty = false;
-		}
-		
-		//设置颜色为浅灰色
-		mPaint.setColor(Color.LTGRAY);
-		//设置Paint的样式为空心
-		mPaint.setStyle(Style.STROKE);
-		//设置Paint的笔帽为圆形
-		mPaint.setStrokeCap(Cap.ROUND);
-		// 设置Paint宽度
-		mPaint.setStrokeWidth(mItemSize / 2);
-		
-		//绘制路径
-		canvas.drawPath(mPath, mPaint);
-		
-		mPaint.setStyle(Style.FILL);
-		//绘制话筒内部（灰色区域）
-		float r = 3.6f * mItemSize;
-		canvas.drawRoundRect(mRectFInner, r, r, mPaint);
+		drawBg(canvas);
 		
 		//裁剪需要绘制绿色的区域
 		canvas.clipRect(mRectFInner.left, mRectFInner.top + (mRectFInner.bottom - mRectFInner.top) * ( 1- mProgress)
@@ -140,7 +127,39 @@ public class VoiceView extends View {
 		
 		//绘制绿色话筒
 		mPaint.setColor(Color.GREEN);
-		canvas.drawRoundRect(mRectFInner, r, r, mPaint);
+		canvas.drawRoundRect(mRectFInner, mRadius, mRadius, mPaint);
+	}
+
+	private void drawBg(Canvas canvas) {
+		if (isPointsDirty) {
+			initPoints();
+			
+			mRadius = 3.6f * mItemSize;
+			
+			Canvas recordingCanvas = mPicture.beginRecording(getMeasuredWidth(), getMeasuredHeight());
+			
+			//设置颜色为浅灰色
+			mPaint.setColor(Color.LTGRAY);
+			//设置Paint的样式为空心
+			mPaint.setStyle(Style.STROKE);
+			//设置Paint的笔帽为圆形
+			mPaint.setStrokeCap(Cap.ROUND);
+			// 设置Paint宽度
+			mPaint.setStrokeWidth(mItemSize / 2);
+			
+			//绘制路径
+			recordingCanvas.drawPath(mPath, mPaint);
+			
+			mPaint.setStyle(Style.FILL);
+			//绘制话筒内部（灰色区域）
+			recordingCanvas.drawRoundRect(mRectFInner, mRadius, mRadius, mPaint);
+			
+			mPicture.endRecording();
+			
+			isPointsDirty = false;
+		}
+		
+		mPicture.draw(canvas);
 	}
 
 	private void initPoints() {

@@ -106,11 +106,18 @@ public class ClockView extends View{
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		canvas.translate(centerX, centerY);
+		
+		preDraw(canvas);
 		
 		drawClockBg(canvas);
 		
 		drawHand(canvas);
+	}
+
+	private void preDraw(Canvas canvas) {
+		canvas.translate(centerX, centerY);
+		mPaint.reset();
+		mPaint.setAntiAlias(true);
 	}
 
 	/**
@@ -118,6 +125,7 @@ public class ClockView extends View{
 	 * @param canvas
 	 */
 	private void drawHand(Canvas canvas) {
+		mPaint.setColor(Color.GRAY);
 		//时针
 		canvas.save();
 		mPaint.setStrokeWidth(4);
@@ -190,6 +198,8 @@ public class ClockView extends View{
 			recordCanvas.restore();
 			
 			mPicture.endRecording();
+			
+			isPointsDirty = false;
 		}
 		mPicture.draw(canvas);
 		
