@@ -60,7 +60,7 @@ public class ClockView extends View{
 	
 	private int mTextMode = TEXT_MODE_FIXED;
 	
-	private Picture mPicture;
+	private Picture mPicture = new Picture();
 	
 	public ClockView(Context context) {
 		this(context,null);
@@ -156,10 +156,7 @@ public class ClockView extends View{
 	 * @param canvas
 	 */
 	private void drawClockBg(Canvas canvas) {
-		
 		if (isPointsDirty) {
-			
-			mPicture = new Picture();
 			Canvas recordCanvas = mPicture.beginRecording(getMeasuredWidth(), getMeasuredHeight());
 			
 			mPaint.setStrokeWidth(2);
@@ -199,11 +196,10 @@ public class ClockView extends View{
 			
 			mPicture.endRecording();
 			
+			
 			isPointsDirty = false;
 		}
 		mPicture.draw(canvas);
-		
-		
 	}
 	
 	private Calendar mTime;
