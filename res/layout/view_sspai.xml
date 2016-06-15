@@ -2,11 +2,12 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#888888"
     android:padding="@dimen/activity_horizontal_margin" >
 
     <com.peerless2012.customerview.view.SSPaiView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_centerInParent="true" />
-
+    
 </RelativeLayout>

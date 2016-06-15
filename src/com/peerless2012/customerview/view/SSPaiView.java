@@ -1,14 +1,25 @@
 package com.peerless2012.customerview.view;
 
+import java.util.Random;
+
+import android.animation.Animator;
+import android.animation.Animator.AnimatorListener;
+import android.animation.ValueAnimator;
+import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Paint.Style;
+import android.graphics.Path;
 import android.graphics.PathMeasure;
+import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
-import android.view.View.MeasureSpec;
+import android.view.ViewParent;
+import android.view.animation.Animation;
 
 /**
 * @Author peerless2012
@@ -44,6 +55,10 @@ public class SSPaiView extends View {
 	
 	private int edgeWidth = 2;
 	
+	private int textSize;
+	
+	private float progress = 0f;
+	
 	public SSPaiView(Context context) {
 		super(context);
 		init(context,null);
@@ -77,10 +92,11 @@ public class SSPaiView extends View {
 		if (heightMode != MeasureSpec.EXACTLY) {
 			height = defaultHeight;
 		}
-		mContentWidth = Math.min(width, height);
-		setMeasuredDimension(mContentWidth + getPaddingLeft() + getPaddingRight()
-				, mContentWidth + getPaddingTop() + getPaddingBottom());
-		isPointsDirty = true;
+		int widthLast = Math.min(width, height);
+		setMeasuredDimension(widthLast, widthLast);
+		int newWidth = widthLast - getPaddingLeft() - getPaddingRight();
+		int newHeight = widthLast - getPaddingTop() - getPaddingBottom();
+		mContentWidth = Math.max(newWidth, newHeight);
 		
 		centerX = mContentWidth / 2 + getPaddingLeft();
 		centerY = mContentWidth / 2 + getPaddingTop();
@@ -100,14 +116,138 @@ public class SSPaiView extends View {
 		
 		canvas.translate(centerX, centerY);
 		
-		mPaint.setColor(Color.RED);
-		mPaint.setStrokeWidth(edgeWidth);
-		canvas.drawCircle(0, 0, radius, mPaint);
-	}
-
-	private void initPath() {
+		if (progress <= 1) {
+			destPath.reset();
+			mPaint.setColor(Color.RED);
+			mPaint.setStrokeWidth(edgeWidth);
+			mPaint.setStyle(Style.STROKE);
+			float length = mPathMeasure.getLength();
+			float topEnd = (length / 2) * progress;
+			Log.i("SSPaiView", "111111   " + topEnd);
+			mPathMeasure.getSegment(0, topEnd, destPath, true);
+			canvas.drawPath(destPath, mPaint);
+			
+			mPathMeasure.getSegment(length - topEnd, length, destPath, true);
+			canvas.drawPath(destPath, mPaint);
+		}else {
+			mPaint.setColor(Color.RED);
+			
+			mPaint.setStyle(Style.STROKE);
+			canvas.drawPath(mEdgePath, mPaint);
+			
+			float top = radius - (progress - 1) * radius *2;
+			canvas.clipRect(-radius, top, radius, radius);
+			
+			canvas.clipPath(mTextPath, android.graphics.Region.Op.DIFFERENCE);
+			
+			mPaint.setColor(Color.RED);
+			mPaint.setStyle(Style.FILL);
+			canvas.drawPath(mEdgePath, mPaint);
+		}
+		
 		
 	}
 
+	private Path mEdgePath = new Path();
+	
+	private Path destPath = new Path();
+	
+	private Path mTextPath = new Path();
+	
+	private RectF mEdgeRectF = new RectF();
+
+	private ValueAnimator valueAnimator;
+	
+	PathMeasure mPathMeasure = new PathMeasure();
+	
+	private void initPath() {
+		
+		mEdgePath.reset();
+		mEdgeRectF.set(-radius, -radius, radius, radius);
+		mEdgePath.moveTo(radius, -radius);
+		mEdgePath.lineTo(radius, 0);
+		mEdgePath.arcTo(mEdgeRectF, 0, 270);
+		mEdgePath.lineTo(radius, -radius);
+		mPathMeasure.setPath(mEdgePath, false);
+		
+		mTextPath.reset();
+		mTextPath.moveTo((-1.15f/1.75f) * radius, (-0.35f / 1.75f) * radius);//1
+//		mTextPath.lineTo((-0.65f / 1.75f) * radius, (-0.95f / 1.75f) * radius);//2需要切换成圆弧
+		mTextPath.quadTo((-1.15f/1.75f) * radius, (-0.95f / 1.75f) * radius, (-0.65f / 1.75f) * radius, (-0.95f / 1.75f) * radius);
+		mTextPath.lineTo((1.15f / 1.75f) * radius, (-0.95f / 1.75f) * radius);//3
+//		mTextPath.lineTo((1.35f / 1.75f) * radius, (-1.15f / 1.75f) * radius);//4需要圆弧
+		mTextPath.quadTo((1.35f / 1.75f) * radius, (-0.95f / 1.75f) * radius, (1.35f / 1.75f) * radius, (-1.15f / 1.75f) * radius);
+//		mTextPath.lineTo((1.1f / 1.75f) * radius, (-0.55f / 1.75f) * radius);//5 圆弧
+		mTextPath.quadTo((1.35f / 1.75f) * radius, (-0.55f / 1.75f) * radius, (1.0f / 1.75f) * radius, (-0.55f / 1.75f) * radius);
+		mTextPath.lineTo((0.80f / 1.75f) * radius, (-0.55f / 1.75f) * radius);//6
+		mTextPath.lineTo((0.60f / 1.75f) * radius, (0.65f / 1.75f) * radius);//7
+//		mTextPath.lineTo((1.05f / 1.75f) * radius, (0.55f / 1.75f) * radius);//8圆弧
+		mTextPath.quadTo((0.75f / 1.75f) * radius,(0.75f / 1.75f) * radius, (1.10f / 1.75f) * radius, (0.45f / 1.75f) * radius);
+//		mTextPath.lineTo((0.55f / 1.75f) * radius, (0.95f / 1.75f) * radius);//8和9中间
+//		mTextPath.lineTo((0.05f / 1.75f) * radius, (0.85f / 1.75f) * radius);//9
+		mTextPath.cubicTo((0.95f / 1.75f) * radius, (1.25f / 1.75f) * radius, (0.15f / 1.75f) * radius, (1.15f / 1.75f) * radius, (0.15f / 1.75f) * radius, (0.75f / 1.75f) * radius);
+		mTextPath.lineTo((0.35f / 1.75f) * radius, (-0.55f / 1.75f) * radius);//10
+		mTextPath.lineTo((-0.05f / 1.75f) * radius, (-0.55f / 1.75f) * radius);//11
+		mTextPath.lineTo((-0.45f / 1.75f) * radius, (1.05f / 1.75f) * radius);//12
+		mTextPath.lineTo((-0.95f / 1.75f) * radius, (1.05f / 1.75f) * radius);//13
+		mTextPath.lineTo((-0.55f / 1.75f) * radius, (-0.55f / 1.75f) * radius);//114
+		mTextPath.lineTo((-0.85f / 1.75f) * radius, (-0.55f / 1.75f) * radius);//15
+//		mTextPath.lineTo((-1.15f/1.75f) * radius, (-0.35f / 1.75f) * radius);//16
+		mTextPath.quadTo((-1.15f/1.75f) * radius, (-0.55f / 1.75f) * radius, (-1.15f/1.75f) * radius, (-0.35f / 1.75f) * radius);
+	}
+	
+	private Random mRandom = new Random();
+	@Override
+	protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		valueAnimator = ValueAnimator.ofFloat(0,2.0f);
+		valueAnimator.setDuration(5000);
+		valueAnimator.addUpdateListener(new AnimatorUpdateListener() {
+			
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				progress = (float) animation.getAnimatedValue();
+				invalidate();
+			}
+		});
+		valueAnimator.setRepeatCount(Animation.INFINITE);
+		valueAnimator.addListener(new AnimatorListener() {
+			
+			@Override
+			public void onAnimationStart(Animator animation) {
+				
+			}
+			
+			@Override
+			public void onAnimationRepeat(Animator animation) {
+				ViewParent parent = getParent();
+				if (parent != null) {
+					((View)parent).setBackgroundColor(Color.argb(
+							mRandom.nextInt(100) + 100
+							, mRandom.nextInt(255)
+							, mRandom.nextInt(255)
+							, mRandom.nextInt(255)));
+				}
+			}
+			
+			@Override
+			public void onAnimationEnd(Animator animation) {
+				
+			}
+			
+			@Override
+			public void onAnimationCancel(Animator animation) {
+				
+			}
+		});
+		valueAnimator.start();
+		
+	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		valueAnimator.end();
+		super.onDetachedFromWindow();
+	}
 	
 }
