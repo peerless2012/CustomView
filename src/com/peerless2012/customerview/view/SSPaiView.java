@@ -55,8 +55,6 @@ public class SSPaiView extends View {
 	
 	private int edgeWidth = 2;
 	
-	private int textSize;
-	
 	private float progress = 0f;
 	
 	public SSPaiView(Context context) {
