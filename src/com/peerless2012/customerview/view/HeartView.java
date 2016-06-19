@@ -1,11 +1,16 @@
 package com.peerless2012.customerview.view;
 
+import android.animation.ValueAnimator;
+import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.Shader.TileMode;
@@ -13,6 +18,7 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.View.MeasureSpec;
+import android.view.animation.Animation;
 
 public class HeartView extends View {
 
@@ -76,24 +82,38 @@ public class HeartView extends View {
 		if (heightMode != MeasureSpec.EXACTLY) {
 			height = defaultHeight;
 		}
-		mContentWidth = Math.min(width, height);
+		mContentWidth = Math.max(width, height);
 		setMeasuredDimension(mContentWidth + getPaddingLeft() + getPaddingRight()
 				, mContentWidth + getPaddingTop() + getPaddingBottom());
 		isPointsDirty = true;
 	}
 	
+	private LinearGradient linearGradient;
+	
+	private Matrix mMatrix = new Matrix();
+	
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
+		canvas.translate(getWidth() / 2, getHeight() / 2);
 		if (isPointsDirty) {
 			initData();
 			isPointsDirty = false;
 		}
 		
-		canvas.translate(getWidth() / 2, getHeight() / 2);
-		canvas.clipPath(mHeartPath);
+		int width = getWidth() / 2;
+		float startX = width * progress;
+		float startY = startX;
+		if (linearGradient == null) {
+			linearGradient = new LinearGradient(0,0,width,width, Color.BLACK, Color.RED, Shader.TileMode.CLAMP);
+		}
+		linearGradient.getLocalMatrix(mMatrix);
+		mMatrix.setTranslate(startX, startY);
+		linearGradient.setLocalMatrix(mMatrix);
 		
-		canvas.drawColor(Color.RED);
+		mPaint.setShader(linearGradient);
+		canvas.drawPath(mHeartPath, mPaint);
+		mPaint.setShader(null);
 		
 	}
 
@@ -171,4 +191,29 @@ public class HeartView extends View {
 		mHeartPath.close();
 		
 	}
-*/}
+*/
+	private ValueAnimator valueAnimator;
+	private float progress;
+	@Override
+	protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		valueAnimator = ValueAnimator.ofFloat(-2.0f,1.0f);
+		valueAnimator.addUpdateListener(new AnimatorUpdateListener() {
+			
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				progress = (float) animation.getAnimatedValue();
+				invalidate();
+			}
+		});
+		valueAnimator.setDuration(3000);
+		valueAnimator.setRepeatCount(Animation.INFINITE);
+		valueAnimator.start();
+	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		valueAnimator.end();
+		super.onDetachedFromWindow();
+	}
+}
