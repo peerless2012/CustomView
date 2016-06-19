@@ -3,14 +3,22 @@ package com.peerless2012.customerview.view;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
+import android.graphics.Shader.TileMode;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.View.MeasureSpec;
 
 public class HeartView extends View {
 
+	 // width="645"
+	 // height="585"
+	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 	/**
@@ -36,16 +44,23 @@ public class HeartView extends View {
 	
 	public HeartView(Context context) {
 		super(context);
+		init(context, null);
 	}
 
 	public HeartView(Context context, AttributeSet attrs) {
 		super(context, attrs);
+		init(context,attrs);
 	}
 
 	public HeartView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
+		init(context, null);
 	}
 	
+	
+	private void init(Context context, AttributeSet attrs) {
+		defaultWidth = defaultHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, context.getResources().getDisplayMetrics());
+	}
 	
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -74,8 +89,12 @@ public class HeartView extends View {
 			initData();
 			isPointsDirty = false;
 		}
+		
+		canvas.translate(getWidth() / 2, getHeight() / 2);
 		canvas.clipPath(mHeartPath);
+		
 		canvas.drawColor(Color.RED);
+		
 	}
 
 	/*private void initData() {
@@ -97,7 +116,37 @@ public class HeartView extends View {
         
 	}*/
 	
+	// 645 322.5
+	// 585 
 	private void initData() {
+		
+		int width = getMeasuredWidth() / 2;
+		
+		mHeartPath.reset();
+		
+		mHeartPath.moveTo(-0.078147426f * width ,0.7081185f * width );
+		mHeartPath.cubicTo(-0.12086068f * width ,0.6602539f * width ,-0.22751379f * width ,0.56694126f * width ,-0.31515422f * width ,0.5007569f * width );
+		mHeartPath.cubicTo(-0.5748258f * width ,0.30465826f * width ,-0.6101672f * width ,0.2762788f * width ,-0.71559924f * width ,0.17919657f * width );
+		mHeartPath.cubicTo(-0.9099699f * width ,2.1925342E-4f * width ,-0.99251586f * width ,-0.1795942f * width ,-0.99223304f * width ,-0.42340702f * width );
+		mHeartPath.cubicTo(-0.99209505f * width ,-0.5424267f * width ,-0.98398256f * width ,-0.5882813f * width ,-0.950652f * width ,-0.6584373f * width );
+		mHeartPath.cubicTo(-0.8941041f * width ,-0.7774627f * width ,-0.8108063f * width ,-0.865908f * width ,-0.70430994f * width ,-0.9200016f * width );
+		mHeartPath.cubicTo(-0.6288823f * width ,-0.95831424f * width ,-0.5916816f * width ,-0.97533584f * width ,-0.46572256f * width ,-0.9760322f * width );
+		mHeartPath.cubicTo(-0.33396038f * width ,-0.9767604f * width ,-0.30622295f * width ,-0.9613974f * width ,-0.22871567f * width ,-0.91881716f * width );
+		mHeartPath.cubicTo(-0.13437614f * width ,-0.86698985f * width ,-0.037274122f * width ,-0.7562259f * width ,-0.017201789f * width ,-0.67754406f * width );
+		mHeartPath.lineTo(-0.004804555f * width ,-0.62894744f * width );
+		mHeartPath.lineTo(0.025767908f * width ,-0.6958762f * width );
+		mHeartPath.cubicTo(0.19853118f * width ,-1.0740868f * width ,0.7501039f * width ,-1.0684283f * width ,0.9420541f * width ,-0.6864759f * width );
+		mHeartPath.cubicTo(1.0029461f * width ,-0.5653098f * width ,1.0096313f * width ,-0.30659008f * width ,0.95563585f * width ,-0.16085461f * width );
+		mHeartPath.cubicTo(0.8852009f * width ,0.02925202f * width ,0.75290716f * width ,0.17418581f * width ,0.44708905f * width ,0.39628217f * width );
+		mHeartPath.cubicTo(0.24652837f * width ,0.5419368f * width ,0.019539483f * width ,0.76231587f * width ,0.0037380958f * width ,0.79326814f * width );
+		mHeartPath.cubicTo(-0.014604435f * width ,0.82919866f * width ,0.0028632586f * width ,0.79889894f * width ,-0.078147426f * width ,0.7081185f * width );
+
+		
+		mHeartPath.close();
+		
+	}
+/*	private void initData() {
+		
 		mHeartPath.reset();
 		
 		mHeartPath.moveTo(297.29747f,550.86823f);
@@ -122,4 +171,4 @@ public class HeartView extends View {
 		mHeartPath.close();
 		
 	}
-}
+*/}
