@@ -1,19 +1,26 @@
 package com.peerless2012.customerview.view;
 
+import com.peerless2012.customerview.R;
+
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Paint.Style;
+import android.graphics.Path.Direction;
 import android.graphics.Path;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.Shader.TileMode;
+import android.graphics.Xfermode;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
@@ -26,6 +33,7 @@ public class HeartView extends View {
 	 // height="585"
 	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+	private Paint mPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 	/**
 	 * View缺省宽度
@@ -46,7 +54,9 @@ public class HeartView extends View {
 	
 	private Path mHeartPath = new Path();
 	
-	private float rate = 10; // 半径变化率
+	private Path mCirclePath = new Path();
+	
+	private Bitmap mBitmap;
 	
 	public HeartView(Context context) {
 		super(context);
@@ -66,6 +76,8 @@ public class HeartView extends View {
 	
 	private void init(Context context, AttributeSet attrs) {
 		defaultWidth = defaultHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, context.getResources().getDisplayMetrics());
+		mBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.putian);
+		setWillNotDraw(false);
 	}
 	
 	@Override
@@ -82,7 +94,7 @@ public class HeartView extends View {
 		if (heightMode != MeasureSpec.EXACTLY) {
 			height = defaultHeight;
 		}
-		mContentWidth = Math.max(width, height);
+		mContentWidth = Math.min(width, height);
 		setMeasuredDimension(mContentWidth + getPaddingLeft() + getPaddingRight()
 				, mContentWidth + getPaddingTop() + getPaddingBottom());
 		isPointsDirty = true;
@@ -92,6 +104,10 @@ public class HeartView extends View {
 	
 	private Matrix mMatrix = new Matrix();
 	
+	private Matrix mBitmapMatrix = new Matrix();
+	
+	private Xfermode xfermode = new PorterDuffXfermode(Mode.SRC_ATOP);
+	
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
@@ -100,20 +116,44 @@ public class HeartView extends View {
 			initData();
 			isPointsDirty = false;
 		}
-		
 		int width = getWidth() / 2;
-		float startX = width * progress;
-		float startY = startX;
-		if (linearGradient == null) {
-			linearGradient = new LinearGradient(0,0,width,width, Color.BLACK, Color.RED, Shader.TileMode.CLAMP);
-		}
-		linearGradient.getLocalMatrix(mMatrix);
-		mMatrix.setTranslate(startX, startY);
-		linearGradient.setLocalMatrix(mMatrix);
 		
-		mPaint.setShader(linearGradient);
-		canvas.drawPath(mHeartPath, mPaint);
-		mPaint.setShader(null);
+		
+		
+		if (progress <= -2) {
+			float p = progress + 3;
+			mPaint.setColor(Color.RED);
+			mCirclePath.reset();
+			mCirclePath.addCircle(0, 0, width * p * 1.5f, Direction.CCW);
+			canvas.clipPath(mCirclePath);
+			canvas.drawPath(mHeartPath, mPaint);
+		}else if (progress <= 1){
+			float startX = width * progress;
+			float startY = startX;
+			if (linearGradient == null) {
+				linearGradient = new LinearGradient(0,0,width,width, Color.BLACK, Color.RED, TileMode.CLAMP);
+			}
+			linearGradient.getLocalMatrix(mMatrix);
+			mMatrix.setTranslate(startX, startY);
+			linearGradient.setLocalMatrix(mMatrix);
+
+			mPaint.setShader(linearGradient);
+			canvas.drawPath(mHeartPath, mPaint);
+			mPaint.setShader(null);
+		}else if (progress <= 2) {
+			float p = 1 - (progress - 1);
+			mPaint.setColor(Color.BLACK);
+			mCirclePath.reset();
+			mCirclePath.addCircle(0, 0, width * p, Direction.CCW);
+			canvas.clipPath(mCirclePath);
+			canvas.drawPath(mHeartPath, mPaint);
+		}else {
+			float p = progress - 2;
+			mCirclePath.reset();
+			mCirclePath.addCircle(0, 0, width * p * 1.5f, Direction.CCW);
+			canvas.clipPath(mCirclePath);
+			canvas.drawBitmap(mBitmap, mBitmapMatrix, mPaint);
+		}
 		
 	}
 
@@ -164,6 +204,35 @@ public class HeartView extends View {
 		
 		mHeartPath.close();
 		
+//		float scaleX = getWidth() / ( bitmapWidth * 1.0f);
+//		float scaleY = getHeight() / (bitmapHeight * 1.0f);
+//		float scale = Math.max(scaleX, scaleY);
+		mBitmapMatrix.reset();
+//		mBitmapMatrix.setTranslate(-getWidth() / 2, -getHeight() / 2);
+//		mBitmapMatrix.postScale(scale,scale);
+		
+		int dwidth = mBitmap.getWidth();
+        int dheight = mBitmap.getHeight();
+
+        int vwidth = getWidth();
+        int vheight = getHeight();
+		
+        float scale;
+        float dx;
+        float dy;
+        
+        if (dwidth <= vwidth && dheight <= vheight) {
+            scale = 1.0f;
+        } else {
+            scale = Math.min((float) vwidth / (float) dwidth,
+                    (float) vheight / (float) dheight);
+        }
+        
+        dx = (int) ((vwidth - dwidth * scale) * 0.5f + 0.5f);
+        dy = (int) ((vheight - dheight * scale) * 0.5f + 0.5f);
+        mBitmapMatrix.setScale(scale, scale);
+        mBitmapMatrix.postTranslate(dx - getWidth() / 2, dy - getHeight() / 2);
+		
 	}
 /*	private void initData() {
 		
@@ -193,11 +262,11 @@ public class HeartView extends View {
 	}
 */
 	private ValueAnimator valueAnimator;
-	private float progress;
+	private float progress = 1.6f;
 	@Override
 	protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
-		valueAnimator = ValueAnimator.ofFloat(-2.0f,1.0f);
+		valueAnimator = ValueAnimator.ofFloat(-3.0f,3.0f);
 		valueAnimator.addUpdateListener(new AnimatorUpdateListener() {
 			
 			@Override
@@ -206,7 +275,7 @@ public class HeartView extends View {
 				invalidate();
 			}
 		});
-		valueAnimator.setDuration(3000);
+		valueAnimator.setDuration(6000);
 		valueAnimator.setRepeatCount(Animation.INFINITE);
 		valueAnimator.start();
 	}
