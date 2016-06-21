@@ -33,7 +33,6 @@ public class HeartView extends View {
 	 // height="585"
 	
 	private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-	private Paint mPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 	/**
 	 * View缺省宽度
@@ -105,8 +104,6 @@ public class HeartView extends View {
 	private Matrix mMatrix = new Matrix();
 	
 	private Matrix mBitmapMatrix = new Matrix();
-	
-	private Xfermode xfermode = new PorterDuffXfermode(Mode.SRC_ATOP);
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
