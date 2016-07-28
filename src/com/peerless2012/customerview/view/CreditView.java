@@ -1,5 +1,7 @@
 package com.peerless2012.customerview.view;
 
+import android.animation.ValueAnimator;
+import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -13,6 +15,7 @@ import android.graphics.Paint.Style;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.animation.Animation;
 
 /**
 * @Author peerless2012
@@ -22,6 +25,7 @@ import android.view.View;
 * @Description: 支付宝信用
 */
 public class CreditView extends View {
+	
 	private final static String [] mTickMarkTexts = {
 		"350","较差","550","中等","600","良好","650","优秀","700","极好","950"
 	};
@@ -47,15 +51,15 @@ public class CreditView extends View {
 	 */
 	private float mRadius;
 	
-	private float mTickMarkWidth = 10;
+	private float mTickMarkWidth;
 	
-	private float mTickMarkLineShortWidth = 2;
+	private float mTickMarkLineShortWidth;
 	
-	private float mTickMarkLineLongWidth = 5;
+	private float mTickMarkLineLongWidth;
 	
-	private int[] mCurrentColors = {0x66FFFFFF,0xFFFFFFFF};
+	private int[] mCurrentColors = {0xFFFFFFFF,0xFFFFFFFF,0x66FFFFFF,0xFFFFFFFF};
 	
-	private float[] mCurrentPoints = {0,1};
+	private float[] mCurrentPoints = {0,0.25f,0.25f,1.0f};
 	
 	private float mRollBackAngel =  90 + 7.5f * 3;
 	
@@ -65,6 +69,11 @@ public class CreditView extends View {
 	
 	private float mProgress = 0.8f;
 	
+	private float mBigTextSize,mMiddleTextSize,mSmallTextSize;
+	
+	private float mTickMarkerTextSize;
+	
+	private SweepGradient mSweepGradient;
 	
 	public CreditView(Context context) {
 		this(context,null);
@@ -78,12 +87,24 @@ public class CreditView extends View {
 		setWillNotDraw(false);
 		mGrayWhiteColor = Color.parseColor("#66FFFFFF");
 		mWhiteColor = Color.parseColor("#AAFFFFFF");
+		
+		mTickMarkWidth = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+		mTickMarkLineShortWidth = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 2);
+		mTickMarkLineLongWidth = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 5);
+		mTickMarkWidth = generateScaledSize(TypedValue.COMPLEX_UNIT_DIP, 10);
+		
+		mBigTextSize = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 40);
+		mMiddleTextSize = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 18);
+		mSmallTextSize = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 10);
+		mTickMarkerTextSize = generateScaledSize(TypedValue.COMPLEX_UNIT_SP, 10);
+		
+		mSweepGradient = new SweepGradient(0, 0, mCurrentColors , mCurrentPoints);
 	}
 	
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
-		int height = (int) (width * 1.5f);
+		int height = getDefaultSize(getSuggestedMinimumWidth(), heightMeasureSpec);
 		setMeasuredDimension(width, height);
 	}
 	
@@ -110,29 +131,37 @@ public class CreditView extends View {
 	}
 	
 	
+	/**
+	 * 绘制中间区域文字
+	 * @param canvas
+	 */
 	private void drawCreditText(Canvas canvas) {
-		mTextPaint.setTextSize(40);
+		mTextPaint.setTextSize(mMiddleTextSize);
 		float evaluateHeight = getTextHeight(mTextPaint);
 		canvas.drawText("信用极好", 0, 0 + getTextYOffset(mTextPaint), mTextPaint);
 		
-		mTextPaint.setTextSize(60);
+		mTextPaint.setTextSize(mBigTextSize);
 		float scoreHeight = getTextHeight(mTextPaint);
 		canvas.drawText("749", 0, 0 + getTextYOffset(mTextPaint) - evaluateHeight / 2 - scoreHeight / 2, mTextPaint);
 		
-		mTextPaint.setTextSize(20);
+		mTextPaint.setTextSize(mSmallTextSize);
 		float timeHeight = getTextHeight(mTextPaint);
 		canvas.drawText("评估时间：2016.07.23", 0, 0 + timeHeight + evaluateHeight / 2 + getTextYOffset(mTextPaint), mTextPaint);
 		
 	}
 
+	/**
+	 * 绘制周围圆环等
+	 * @param canvas
+	 */
 	private void drawSurround(Canvas canvas) {
 		mPaint.setColor(mGrayWhiteColor);
-		mPaint.setStrokeWidth(5);
+		mPaint.setStrokeWidth(mTickMarkLineLongWidth);
 		mPaint.setStyle(Style.STROKE);
 		canvas.drawArc(mSurroundCircleRectF, mStartAngel, mSweepAngel, false, mPaint);
-		SweepGradient sweepGradient = new SweepGradient(0, 0, mCurrentColors , mCurrentPoints);
+		
 		mPaint.setStrokeCap(Cap.ROUND);
-		mPaint.setShader(sweepGradient);
+		mPaint.setShader(mSweepGradient);
 		canvas.drawArc(mSurroundCircleRectF, mStartAngel, mSweepAngel * mProgress, false, mPaint);
 		mPaint.setShader(null);
 		mPaint.setStrokeCap(Cap.BUTT);
@@ -148,23 +177,23 @@ public class CreditView extends View {
 	}
 
 	/**
-	 * 绘制刻度（一刻度=7.5度）
-	 * 角度从 
+	 * 绘制刻度
+	 * （一刻度=7.5度）角度从  157.5度，扫过225du度。
 	 * @param canvas
 	 */
 	private void drawTickMark(Canvas canvas) {
 		mPaint.setColor(mGrayWhiteColor);
-		mPaint.setStrokeWidth(10);
+		mPaint.setStrokeWidth(mTickMarkWidth);
 		mPaint.setStyle(Style.STROKE);
 		canvas.drawArc(mCircleRectF, mStartAngel, mSweepAngel, false, mPaint);
 		
 		canvas.save();
 		mPaint.setColor(mWhiteColor);
-		canvas.rotate(mRollBackAngel);
-		mPaint.setStrokeWidth(2);
+		canvas.rotate(-mRollBackAngel);
 		mTextPaint.setTextAlign(Align.CENTER);
 		mTextPaint.setColor(Color.WHITE);
-		mTextPaint.setTextSize(16);
+		mTextPaint.setTextSize(mTickMarkerTextSize);
+		float textOffset = -mRadius + mTickMarkWidth * 3;
 		for (int i = 0; i < 30; i++) {
 			if (i % 6 ==0) {
 				mPaint.setStrokeWidth(mTickMarkLineLongWidth);
@@ -173,13 +202,13 @@ public class CreditView extends View {
 			}
 			canvas.drawLine(0, -mRadius, 0, -mRadius + mTickMarkWidth, mPaint);
 			if (i % 3 == 0) {
-				canvas.drawText(mTickMarkTexts[i / 3], 0, -mRadius + mTickMarkWidth * 4, mTextPaint);
+				canvas.drawText(mTickMarkTexts[i / 3], 0, textOffset, mTextPaint);
 			}
-			canvas.rotate(-7.5f);
+			canvas.rotate(7.5f);
 		}
 		mPaint.setStrokeWidth(mTickMarkLineLongWidth);
 		canvas.drawLine(0, -mRadius, 0, -mRadius + mTickMarkWidth, mPaint);
-		canvas.drawText(mTickMarkTexts[mTickMarkTexts.length - 1], 0, -mRadius + mTickMarkWidth * 4, mTextPaint);
+		canvas.drawText(mTickMarkTexts[mTickMarkTexts.length - 1], 0, textOffset, mTextPaint);
 		canvas.restore();
 	}
 	
