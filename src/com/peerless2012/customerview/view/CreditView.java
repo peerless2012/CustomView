@@ -241,4 +241,29 @@ public class CreditView extends View {
 		FontMetrics fontMetrics = paint.getFontMetrics();
 		return (fontMetrics.descent - fontMetrics.ascent) / 4;
 	}
+	
+	private ValueAnimator valueAnimator;
+	
+	@Override
+	protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		valueAnimator = ValueAnimator.ofFloat(0,1.0f);
+		valueAnimator.setDuration(5000);
+		valueAnimator.addUpdateListener(new AnimatorUpdateListener() {
+			
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				mProgress = (float) animation.getAnimatedValue();
+				invalidate();
+			}
+		});
+		valueAnimator.setRepeatCount(Animation.INFINITE);
+		valueAnimator.start();
+	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		valueAnimator.end();
+		super.onDetachedFromWindow();
+	}
 }
