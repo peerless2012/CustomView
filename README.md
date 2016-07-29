@@ -16,6 +16,16 @@
 ### 4.QQ健康卡片
 ![QQ健康卡片](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/qqhealth.png)
 
+### 5.少数派启动动画
+![少数派动图](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/sspai.gif)
+
+![少数派](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/sspai.png)
+
+### 6.支付宝
+![支付宝动图](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/credit_view.png)
+
+![支付宝](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/credit_view.gif)
+
 ## 关于
 Author peerless2012
 
