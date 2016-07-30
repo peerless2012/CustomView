@@ -19,12 +19,22 @@
 ### 5.少数派启动动画
 ![少数派动图](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/sspai.gif)
 
-![少数派](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/sspai.png)
+
+<div align="center">
+	<img src="https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/sspai.png" width = "360" height = "640" alt="少数派" align=center />
+</div>
+
 
 ### 6.支付宝
-![支付宝动图](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/credit_view.png)
+![支付宝动图](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/credit_view.gif)
 
-![支付宝](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/credit_view.gif)
+<div align="center">
+	<img src="https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/credit_view.png" width = "360" height = "640" alt="支付宝" align=center />
+</div>
+
+
+### 6.某类型医院
+![某类型医院](https://raw.githubusercontent.com/peerless2012/CustomView/master/ScreenShots/some_hospital.gif)
 
 ## 关于
 Author peerless2012
