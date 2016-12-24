@@ -2,11 +2,11 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/activity_horizontal_margin" >
-
-    <com.peerless2012.customerview.view.WaveView
+    android:orientation="vertical" >
+    
+    <com.peerless2012.customerview.view.ShaderView 
+        android:layout_centerInParent="true"
         android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:layout_centerInParent="true" />
+        android:layout_height="300dp"/>
 
 </RelativeLayout>
